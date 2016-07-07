@@ -1,0 +1,6 @@
+# ignore non-hdl source files
+*.*
+!*.vhd
+!*.v
+!*.sv
+!.git*
