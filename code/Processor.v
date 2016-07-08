@@ -705,6 +705,7 @@ Issue_Window #(.DEPTH (16)) Issue_Window(
 .Inst4_Rdst(IS_Inst4_Rdst),
 /*Issue Window*/
 
+.SL_ALU0_imm(DataMem_Address),
 .Issue_window_full(Issue_window_full)
 );
 

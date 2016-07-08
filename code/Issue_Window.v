@@ -80,14 +80,14 @@ input [31:0]BU_branch_PC,
 /*Select For ALU0 Unit*/
 output reg[3:0]SL_ALU0_Commit_Window,
 output reg SL_ALU0_en,
-output reg[5:0]SL_ALU0_Rdst,SL_ALU0_Src1,SL_ALU0_Src2,
+output reg[5:0]SL_ALU0_Phydst,SL_ALU0_Src1,SL_ALU0_Src2,
 output reg[5:0]SL_ALU0_operation,
 output reg[31:0]SL_ALU0_imm,
 
 /*Select For ALU1 Unit*/
 output reg[3:0]SL_ALU1_Commit_Window,
 output reg SL_ALU1_en,
-output reg[5:0]SL_ALU1_Rdst,SL_ALU1_Src1,SL_ALU1_Src2,
+output reg[5:0]SL_ALU1_Phydst,SL_ALU1_Src1,SL_ALU1_Src2,
 output reg[5:0]SL_ALU1_operation,
 output reg[31:0]SL_ALU1_imm,
 
@@ -110,6 +110,8 @@ integer i,j;
 /*Inst Count*/
 reg [4:0]Inst_Counter;
 wire[1:0]write_address;
+wire[3:0]read_address;
+wire [0:15]Head;
 /*Issue Windown*/
 reg [3:0]IW_Function[0:15];
 reg [5:0]IW_Operation[0:15];
@@ -139,6 +141,14 @@ up_counter #(.WIDTH (4)) read_address_count(
 .clr(flush),
 .en(Commit),
 .count(read_address)
+);
+
+shift_counter #(.WIDTH(16),.Reset(16'h8000))shift_counter(
+.clk(clk),
+.rst(rst),
+.clr(flush),
+.en(Commit),
+.count(Head)
 );
 
 always@(posedge clk) begin
@@ -182,80 +192,183 @@ always@(posedge clk) begin
 				end
 			end
 		if(Inst1_Valid&(!Issue_window_full))begin
-				//Inst1
-				IW_imm[{write_address,2'b00}]         <=Inst1_imm;
-				IW_PC[{write_address,2'b00}]          <=Inst1_PC;
-				//IW_Jump_PC[{write_address,2'b00}]     <=32'd0;
-				IW_Operation[{write_address,2'b00}]   <=Inst1_Operation;
-				IW_PhyRdst[{write_address,2'b00}]     <=Inst1_Phydst;
-				IW_Function[{write_address,2'b00}]    <=Inst1_Function;
-				IW_Src1_Wake[{write_address,2'b00}]   <=Inst1_Src1_Wake;
-				IW_Src2_Wake[{write_address,2'b00}]   <=Inst1_Src2_Wake;
-				IW_Selected[{write_address,2'b00}]    <=1'b0;
-				IW_Can_Commited[{write_address,2'b00}]<=1'b0;
-				IW_Src1[{write_address,2'b00}]        <=Inst1_Src1;
-				IW_Src2[{write_address,2'b00}]        <=Inst1_Src2;
-				IW_Rdst[{write_address,2'b00}]        <=Inst1_Rdst;
-				IW_Branch[{write_address,2'b00}]      <=1'b0;
-				IW_Inst_Valid[{write_address,2'b00}]  <=Inst1_Valid;
+			//Inst1
+			IW_imm[{write_address,2'b00}]         <=Inst1_imm;
+			IW_PC[{write_address,2'b00}]          <=Inst1_PC;
+			//IW_Jump_PC[{write_address,2'b00}]     <=32'd0;
+			IW_Operation[{write_address,2'b00}]   <=Inst1_Operation;
+			IW_PhyRdst[{write_address,2'b00}]     <=Inst1_Phydst;
+			IW_Function[{write_address,2'b00}]    <=Inst1_Function;
+			IW_Src1_Wake[{write_address,2'b00}]   <=Inst1_Src1_Wake;
+			IW_Src2_Wake[{write_address,2'b00}]   <=Inst1_Src2_Wake;
+			IW_Selected[{write_address,2'b00}]    <=1'b0;
+			IW_Can_Commited[{write_address,2'b00}]<=1'b0;
+			IW_Src1[{write_address,2'b00}]        <=Inst1_Src1;
+			IW_Src2[{write_address,2'b00}]        <=Inst1_Src2;
+			IW_Rdst[{write_address,2'b00}]        <=Inst1_Rdst;
+			IW_Branch[{write_address,2'b00}]      <=1'b0;
+			IW_Inst_Valid[{write_address,2'b00}]  <=Inst1_Valid;
 				
-				//Inst2
-				IW_imm[{write_address,2'b01}]         <=Inst2_imm;
-				IW_PC[{write_address,2'b01}]          <=Inst2_PC;
-				//IW_Jump_PC[{write_address,2'b01}]     <=32'd0;
-				IW_Operation[{write_address,2'b01}]   <=Inst2_Operation;
-				IW_PhyRdst[{write_address,2'b01}]     <=Inst2_Phydst;
-				IW_Function[{write_address,2'b01}]    <=Inst2_Function;
-				IW_Src1_Wake[{write_address,2'b01}]   <=Inst2_Src1_Wake;
-				IW_Src2_Wake[{write_address,2'b01}]   <=Inst2_Src2_Wake;
-				IW_Selected[{write_address,2'b01}]    <=1'b0;
-				IW_Can_Commited[{write_address,2'b01}]<=1'b0;
-				IW_Src1[{write_address,2'b01}]        <=Inst2_Src1;
-				IW_Src2[{write_address,2'b01}]        <=Inst2_Src2;
-				IW_Rdst[{write_address,2'b01}]        <=Inst2_Rdst;
-				IW_Branch[{write_address,2'b01}]      <=1'b0;
-				IW_Inst_Valid[{write_address,2'b01}]  <=Inst2_Valid;
+			//Inst2
+			IW_imm[{write_address,2'b01}]         <=Inst2_imm;
+			IW_PC[{write_address,2'b01}]          <=Inst2_PC;
+			//IW_Jump_PC[{write_address,2'b01}]     <=32'd0;
+			IW_Operation[{write_address,2'b01}]   <=Inst2_Operation;
+			IW_PhyRdst[{write_address,2'b01}]     <=Inst2_Phydst;
+			IW_Function[{write_address,2'b01}]    <=Inst2_Function;
+			IW_Src1_Wake[{write_address,2'b01}]   <=Inst2_Src1_Wake;
+			IW_Src2_Wake[{write_address,2'b01}]   <=Inst2_Src2_Wake;
+			IW_Selected[{write_address,2'b01}]    <=1'b0;
+			IW_Can_Commited[{write_address,2'b01}]<=1'b0;
+			IW_Src1[{write_address,2'b01}]        <=Inst2_Src1;
+			IW_Src2[{write_address,2'b01}]        <=Inst2_Src2;
+			IW_Rdst[{write_address,2'b01}]        <=Inst2_Rdst;
+			IW_Branch[{write_address,2'b01}]      <=1'b0;
+			IW_Inst_Valid[{write_address,2'b01}]  <=Inst2_Valid;
 				
-				//Inst3
-				IW_imm[{write_address,2'b10}]         <=Inst3_imm;
-				IW_PC[{write_address,2'b10}]          <=Inst3_PC;
-				//IW_Jump_PC[{write_address,2'b10}]     <=32'd0;
-				IW_Operation[{write_address,2'b10}]   <=Inst3_Operation;
-				IW_PhyRdst[{write_address,2'b10}]     <=Inst3_Phydst;
-				IW_Function[{write_address,2'b10}]    <=Inst3_Function;
-				IW_Src1_Wake[{write_address,2'b10}]   <=Inst3_Src1_Wake;
-				IW_Src2_Wake[{write_address,2'b10}]   <=Inst3_Src2_Wake;
-				IW_Selected[{write_address,2'b10}]    <=1'b0;
-				IW_Can_Commited[{write_address,2'b10}]<=1'b0;
-				IW_Src1[{write_address,2'b10}]        <=Inst3_Src1;
-				IW_Src2[{write_address,2'b10}]        <=Inst3_Src2;
-				IW_Rdst[{write_address,2'b10}]        <=Inst3_Rdst;
-				IW_Branch[{write_address,2'b10}]      <=1'b0;
-				IW_Inst_Valid[{write_address,2'b10}]  <=Inst3_Valid;
+			//Inst3
+			IW_imm[{write_address,2'b10}]         <=Inst3_imm;
+			IW_PC[{write_address,2'b10}]          <=Inst3_PC;
+			//IW_Jump_PC[{write_address,2'b10}]     <=32'd0;
+			IW_Operation[{write_address,2'b10}]   <=Inst3_Operation;
+			IW_PhyRdst[{write_address,2'b10}]     <=Inst3_Phydst;
+			IW_Function[{write_address,2'b10}]    <=Inst3_Function;
+			IW_Src1_Wake[{write_address,2'b10}]   <=Inst3_Src1_Wake;
+			IW_Src2_Wake[{write_address,2'b10}]   <=Inst3_Src2_Wake;
+			IW_Selected[{write_address,2'b10}]    <=1'b0;
+			IW_Can_Commited[{write_address,2'b10}]<=1'b0;
+			IW_Src1[{write_address,2'b10}]        <=Inst3_Src1;
+			IW_Src2[{write_address,2'b10}]        <=Inst3_Src2;
+			IW_Rdst[{write_address,2'b10}]        <=Inst3_Rdst;
+			IW_Branch[{write_address,2'b10}]      <=1'b0;
+			IW_Inst_Valid[{write_address,2'b10}]  <=Inst3_Valid;
 				
-				//Inst1
-				IW_imm[{write_address,2'b11}]         <=Inst4_imm;
-				IW_PC[{write_address,2'b11}]          <=Inst4_PC;
-				//IW_Jump_PC[{write_address,2'b11}]     <=32'd0;
-				IW_Operation[{write_address,2'b11}]   <=Inst4_Operation;
-				IW_PhyRdst[{write_address,2'b11}]     <=Inst4_Phydst;
-				IW_Function[{write_address,2'b11}]    <=Inst4_Function;
-				IW_Src1_Wake[{write_address,2'b11}]   <=Inst4_Src1_Wake;
-				IW_Src2_Wake[{write_address,2'b11}]   <=Inst4_Src2_Wake;
-				IW_Selected[{write_address,2'b11}]    <=1'b0;
-				IW_Can_Commited[{write_address,2'b11}]<=1'b0;
-				IW_Src1[{write_address,2'b11}]        <=Inst4_Src1;
-				IW_Src2[{write_address,2'b11}]        <=Inst4_Src2;
-				IW_Rdst[{write_address,2'b11}]        <=Inst4_Rdst;
-				IW_Branch[{write_address,2'b11}]      <=1'b0;
-				IW_Inst_Valid[{write_address,2'b11}]  <=Inst4_Valid;
+			//Inst1
+			IW_imm[{write_address,2'b11}]         <=Inst4_imm;
+			IW_PC[{write_address,2'b11}]          <=Inst4_PC;
+			//IW_Jump_PC[{write_address,2'b11}]     <=32'd0;
+			IW_Operation[{write_address,2'b11}]   <=Inst4_Operation;
+			IW_PhyRdst[{write_address,2'b11}]     <=Inst4_Phydst;
+			IW_Function[{write_address,2'b11}]    <=Inst4_Function;
+			IW_Src1_Wake[{write_address,2'b11}]   <=Inst4_Src1_Wake;
+			IW_Src2_Wake[{write_address,2'b11}]   <=Inst4_Src2_Wake;
+			IW_Selected[{write_address,2'b11}]    <=1'b0;
+			IW_Can_Commited[{write_address,2'b11}]<=1'b0;
+			IW_Src1[{write_address,2'b11}]        <=Inst4_Src1;
+			IW_Src2[{write_address,2'b11}]        <=Inst4_Src2;
+			IW_Rdst[{write_address,2'b11}]        <=Inst4_Rdst;
+			IW_Branch[{write_address,2'b11}]      <=1'b0;
+			IW_Inst_Valid[{write_address,2'b11}]  <=Inst4_Valid;
 			end
+		if(ALU0_P_E_valid)begin
+			IW_Selected[ALU0_P_E_out]    <=1'b1;
+			end
+		if(ALU1_P_E_valid)begin
+			IW_Selected[ALU1_P_E_out]    <=1'b1;
+			end
+			
 			
 			
 		end
 end
+reg [0:15]ALU_Can_Issue;
+reg [0:15]BU_Can_Issue;
+reg [0:15]Load_Can_Issue;
+reg [0:15]Store_Can_Issue;
 
+wire[0:7]Slot_ALU0,Slot_ALU1,ALU0_Head,ALU1_Head;
 
+always@(*)begin
+	for (j=0;j<DEPTH;j=j+1)begin
+		ALU_Can_Issue[j]  <=(IW_Src1_Wake[j]&IW_Src2_Wake[j]&(IW_Function[j][0])&(!IW_Selected[j]));
+		BU_Can_Issue[j]   <=(IW_Src1_Wake[j]&IW_Src2_Wake[j]&(IW_Function[j][1])&(!IW_Selected[j]));
+		Load_Can_Issue[j] <=(IW_Src1_Wake[j]&IW_Src2_Wake[j]&(IW_Function[j][2])&(!IW_Selected[j]));
+		Store_Can_Issue[j]<=(IW_Src1_Wake[j]&IW_Src2_Wake[j]&(IW_Function[j][3])&(!IW_Selected[j]));
+		end
+	end
+	
+assign Slot_ALU0={ALU_Can_Issue[0],ALU_Can_Issue[2],ALU_Can_Issue[4],ALU_Can_Issue[6],ALU_Can_Issue[8],ALU_Can_Issue[10],ALU_Can_Issue[12],ALU_Can_Issue[14]};
+assign Slot_ALU1={ALU_Can_Issue[1],ALU_Can_Issue[3],ALU_Can_Issue[5],ALU_Can_Issue[7],ALU_Can_Issue[9],ALU_Can_Issue[11],ALU_Can_Issue[13],ALU_Can_Issue[15]};
+assign ALU0_Head={Head[0]|Head[1],Head[2]|Head[3],Head[4]|Head[5],Head[6]|Head[7],Head[8]|Head[9],Head[10]|Head[11],Head[12]|Head[13],Head[14]|Head[15]};
+assign ALU1_Head={Head[0]|Head[1],Head[2]|Head[3],Head[4]|Head[5],Head[6]|Head[7],Head[8]|Head[9],Head[10]|Head[11],Head[12]|Head[13],Head[14]|Head[15]};
+wire [2:0]ALU0_P_E_out,ALU1_P_E_out;
 
+wire [3:0]ALU0_Take_Window={ALU0_P_E_out,1'b0};
+wire [3:0]ALU1_Take_Window={ALU1_P_E_out,1'b1};
+wire ALU0_P_E_valid,ALU1_P_E_valid;
 
+Shift_P_Encoder8 ALU0_P_E(
+.Shift_base(read_address[3:1]),
+.in(Slot_ALU0),
+.out(ALU0_P_E_out),
+.valid(ALU0_P_E_valid)
+);
+
+Shift_P_Encoder8 ALU1_P_E(
+.Shift_base(read_address[3:1]),
+.in(Slot_ALU0),
+.out(ALU1_P_E_out),
+.valid(ALU1_P_E_valid)
+);
+reg [3:0]ALU0_select;
+reg ALU0_Issue_req;
+reg [3:0]ALU1_select;
+reg ALU1_Issue_req;
+always@(posedge clk)begin
+	if(rst|flush)begin
+		ALU0_select   <=4'd0;
+		ALU0_Issue_req<=1'd0;
+		ALU1_select   <=4'd0;
+		ALU1_Issue_req<=1'd0;
+		end
+	else begin
+		ALU0_select   <=ALU0_P_E_out;
+		ALU0_Issue_req<=ALU0_P_E_valid;
+		ALU1_select   <=ALU1_P_E_out;
+		ALU1_Issue_req<=ALU1_P_E_valid;
+		end
+end
+
+always@(posedge clk)begin
+	if(rst|flush|(!ALU0_Issue_req))begin
+		SL_ALU0_Commit_Window    <= 4'd0;
+		SL_ALU0_operation        <= 5'd0;
+		SL_ALU0_imm              <=32'd0;
+		SL_ALU0_Phydst           <= 6'd0;
+		SL_ALU0_Src1             <= 6'd0;
+		SL_ALU0_Src2             <= 6'd0;
+		SL_ALU0_en               <= 1'd0;
+		end
+	else begin
+		SL_ALU0_Commit_Window    <=ALU0_select;
+		SL_ALU0_operation        <=IW_Operation[ALU0_select];
+		SL_ALU0_imm              <=IW_imm[ALU0_select];
+		SL_ALU0_Phydst           <=IW_PhyRdst[ALU0_select];
+		SL_ALU0_Src1             <=IW_Src1[ALU0_select];
+		SL_ALU0_Src2             <=IW_Src2[ALU0_select];
+		SL_ALU0_en               <=1'b1;
+		end
+	end
+
+always@(posedge clk)begin
+	if(rst|flush|(!ALU1_Issue_req))begin
+		SL_ALU1_Commit_Window    <= 4'd0;
+		SL_ALU1_operation        <= 5'd0;
+		SL_ALU1_imm              <=32'd0;
+		SL_ALU1_Phydst           <= 6'd0;
+		SL_ALU1_Src1             <= 6'd0;
+		SL_ALU1_Src2             <= 6'd0;
+		SL_ALU1_en               <= 1'd0;
+		end
+	else begin
+		SL_ALU1_Commit_Window    <=ALU1_select;
+		SL_ALU1_operation        <=IW_Operation[ALU1_select];
+		SL_ALU1_imm              <=IW_imm[ALU1_select];
+		SL_ALU1_Phydst           <=IW_PhyRdst[ALU1_select];
+		SL_ALU1_Src1             <=IW_Src1[ALU1_select];
+		SL_ALU1_Src2             <=IW_Src2[ALU1_select];
+		SL_ALU1_en               <=1'b1;
+		end
+	end
+	
 endmodule
