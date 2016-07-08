@@ -95,14 +95,12 @@ for(i=0;i<32;i=i+1)
  Register[i]=Processor.regfile.file[`commit_temp[i]];
  //$display ($time, " Register File R%2d = %32x " ,i,Processor.regfile.file[`commit_temp[i]]);
  end
-end
+end*/
 
 ////////Issue Window 
 always@(posedge clk)
 begin
 $display ($time, "-------Issue Window-------" );
-$display ($time," Issue Window Read  Address %2d",Processor.Issue_Window.read_address);
-$display ($time," Issue Window write Address %2d",Processor.Issue_Window.write_address);
  for(i=0;i<16;i=i+1)
  begin
 
@@ -111,7 +109,7 @@ $display ($time," Issue Window write Address %2d",Processor.Issue_Window.write_a
 	,Processor.Issue_Window.IW_PC[i]
 	,Processor.Issue_Window.IW_Function[i]
 	,Processor.Issue_Window.IW_Operation[i]
-	,Processor.Issue_Window.IW_Oringin_Rdst[i]
+	,Processor.Issue_Window.IW_Rdst[i]
 	,Processor.Issue_Window.IW_PhyRdst[i]
 	,Processor.Issue_Window.IW_Src1[i]
 	,Processor.Issue_Window.IW_Src2[i]
@@ -124,7 +122,7 @@ $display ($time," Issue Window write Address %2d",Processor.Issue_Window.write_a
 
  end
 end
-*/
+
 
 
 //Virtual Machine
