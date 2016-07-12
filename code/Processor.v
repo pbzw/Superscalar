@@ -93,49 +93,68 @@ wire [8:0]DS_Inst1_ALUop;
 wire [4:0]DS_Inst1_Rdst,DS_Inst1_Src1,DS_Inst1_Src2;
 wire [5:0]DS_Inst1_Phy,DS_Inst1_RSrc1,DS_Inst1_RSrc2;
 
-wire [5:0]IS_Inst1_Rdst,IS_Inst1_Phy,IS_Inst1_Src1,IS_Inst1_Src2;
+wire [4:0]IS_Inst1_Rdst;
+wire [5:0]IS_Inst1_Phy,IS_Inst1_Src1,IS_Inst1_Src2;
 
 //Inst2
 wire [8:0]DS_Inst2_ALUop;
 wire [4:0]DS_Inst2_Rdst,DS_Inst2_Src1,DS_Inst2_Src2;
 wire [5:0]DS_Inst2_Phy,DS_Inst2_RSrc1,DS_Inst2_RSrc2;
 
-wire [5:0]IS_Inst2_Rdst,IS_Inst2_Phy,IS_Inst2_Src1,IS_Inst2_Src2;
+wire [4:0]IS_Inst2_Rdst;
+wire [5:0]IS_Inst2_Phy,IS_Inst2_Src1,IS_Inst2_Src2;
 
 //Inst3
 wire [8:0]DS_Inst3_ALUop;
 wire [4:0]DS_Inst3_Rdst,DS_Inst3_Src1,DS_Inst3_Src2;
 wire [5:0]DS_Inst3_Phy,DS_Inst3_RSrc1,DS_Inst3_RSrc2;
 
-wire [5:0]IS_Inst3_Rdst,IS_Inst3_Phy,IS_Inst3_Src1,IS_Inst3_Src2;
+wire [4:0]IS_Inst3_Rdst;
+wire [5:0]IS_Inst3_Phy,IS_Inst3_Src1,IS_Inst3_Src2;
 
 //Inst4
 wire [8:0]DS_Inst4_ALUop;
 wire [4:0]DS_Inst4_Rdst,DS_Inst4_Src1,DS_Inst4_Src2;
 wire [5:0]DS_Inst4_Phy,DS_Inst4_RSrc1,DS_Inst4_RSrc2;
 
-wire [5:0]IS_Inst4_Rdst,IS_Inst4_Phy,IS_Inst4_Src1,IS_Inst4_Src2;
+wire [4:0]IS_Inst4_Rdst;
+wire [5:0]IS_Inst4_Phy,IS_Inst4_Src1,IS_Inst4_Src2;
 
-/*IS Stage*/
+//////////////*IS Stage*/
+wire IS_Stall;
+wire Issue_window_full;
+
 wire [5:0]IS_Inst1_RSrc1,IS_Inst1_RSrc2,IS_Inst1_Phydst;
 wire [31:0]IS_Inst1_imm,IS_Inst1_PC;
 wire [8:0]IS_Inst1_ALUop;
+wire IS_Inst1_Valid;
 
 
 wire [5:0]IS_Inst2_RSrc1,IS_Inst2_RSrc2,IS_Inst2_Phydst;
 wire [31:0]IS_Inst2_imm,IS_Inst2_PC;
 wire [8:0]IS_Inst2_ALUop;
-
+wire IS_Inst2_Valid;
 
 wire [5:0]IS_Inst3_RSrc1,IS_Inst3_RSrc2,IS_Inst3_Phydst;
 wire [31:0]IS_Inst3_imm,IS_Inst3_PC;
 wire [8:0]IS_Inst3_ALUop;
-
+wire IS_Inst3_Valid;
 
 wire [5:0]IS_Inst4_RSrc1,IS_Inst4_RSrc2,IS_Inst4_Phydst;
 wire [31:0]IS_Inst4_imm,IS_Inst4_PC;
 wire [8:0]IS_Inst4_ALUop;
+wire IS_Inst4_Valid;
 
+/*Function Unit Write Back*/
+wire WB_ALU0_Valid,WB_ALU1_Valid,WB_ALU2_Valid,WB_ALU3_Valid;
+wire [5:0]WB_ALU0_Phydst,WB_ALU1_Phydst,WB_ALU2_Phydst,WB_ALU3_Phydst;
+wire [4:0]WB_ALU0_Rdst,WB_ALU1_Rdst,WB_ALU2_Rdst,WB_ALU3_Rdst;
+wire [3:0]WB_ALU0_Commit_Window,WB_ALU1_Commit_Window,WB_ALU2_Commit_Window,WB_ALU3_Commit_Window;
+wire [31:0]WB_ALU0_Result,WB_ALU1_Result,WB_ALU2_Result,WB_ALU3_Result;
+/*Commit Unit */
+wire Commit_1;
+wire [4:0]Commit_Rdst_1;
+wire [5:0]Commit_Phy_1;
 
 Add Add_pc(
 .A(inst_address),
@@ -291,13 +310,13 @@ Register_Rename Register_Rename(
 .clk(clk),
 .rst(rst),
 .Branch_flush(1'b0),
-.Stall(1'b0),
+.Stall(RN_Stall),
 
 //Commit Unit
 
-.Commit(),
-.Commit_Phy(),
-.Commit_Rdst(),
+.Commit(Commit_1),
+.Commit_Phy(Commit_Phy_1),
+.Commit_Rdst(Commit_Rdst_1),
 
 //flush phy wake
 
@@ -365,8 +384,8 @@ wire DS_Inst1_Valid,DS_Inst2_Valid,DS_Inst3_Valid,DS_Inst4_Valid;
 RN_DS RN_DS(
 .clk(clk),
 .rst(rst),
-.flush(1'b0),
-.Stall(1'b0),
+.flush(RN_DS_flush),
+.Stall(DS_Stall),
 .RN_Inst_PC(RN_PC),
 .DS_Inst_PC(DS_Inst_PC),
 //Inst1
@@ -514,7 +533,7 @@ DS_IS DS_IS(
 .clk(clk),
 .rst(rst),
 .flush(1'b0),
-.Stall(1'b0),
+.Stall(IS_Stall),
 
 .DS_Inst_PC(DS_Inst_PC),
 
@@ -600,7 +619,7 @@ Wake_Unit Wake_Unit(
 .clk(clk),
 .rst(rst),
 .flush(1'b0),
-.Stall(1'b0),
+.Stall(IS_Stall),
 
 //Inst1
 .Inst1_Src1(IS_Inst1_RSrc1),
@@ -630,14 +649,17 @@ Wake_Unit Wake_Unit(
 .Inst4_Phydst(IS_Inst4_Phydst),
 
 .Inst4_Src1_Wake(Inst4_Src1_Wake),
-.Inst4_Src2_Wake(Inst4_Src2_Wake)/*,
+.Inst4_Src2_Wake(Inst4_Src2_Wake),
 
-//ALU0_wake
-input [5:0]ALU0_Phydst,
-input ALU0_wake,
-//ALU1_wake
-input [5:0]ALU1_Phydst,
-input ALU1_wake,
+.ALU0_wake(WB_ALU0_Valid),
+.ALU0_Phydst(WB_ALU0_Phydst),
+.ALU1_wake(WB_ALU1_Valid),
+.ALU1_Phydst(WB_ALU1_Phydst),
+.ALU2_wake(WB_ALU2_Valid),
+.ALU2_Phydst(WB_ALU2_Phydst),
+.ALU3_wake(WB_ALU3_Valid),
+.ALU3_Phydst(WB_ALU3_Phydst)
+/*,
 //BU_wake
 input [5:0]BU_Phydst,
 input BU_wake,
@@ -647,9 +669,36 @@ input DU_wake,
 */
 );
 
+
+
+
+wire[4:0]SL_ALU0_Commit_Window,SL_ALU0_Rdst;
+wire SL_ALU0_en;
+wire[5:0]SL_ALU0_Phydst,SL_ALU0_Src1,SL_ALU0_Src2;
+wire[5:0]SL_ALU0_operation;
+wire[31:0]SL_ALU0_imm;
+
+wire[4:0]SL_ALU1_Commit_Window,SL_ALU1_Rdst;
+wire SL_ALU1_en;
+wire[5:0]SL_ALU1_Phydst,SL_ALU1_Src1,SL_ALU1_Src2;
+wire[5:0]SL_ALU1_operation;
+wire[31:0]SL_ALU1_imm;
+
+wire[4:0]SL_ALU2_Commit_Window,SL_ALU2_Rdst;
+wire SL_ALU2_en;
+wire[5:0]SL_ALU2_Phydst,SL_ALU2_Src1,SL_ALU2_Src2;
+wire[5:0]SL_ALU2_operation;
+wire[31:0]SL_ALU2_imm;
+
+wire[4:0]SL_ALU3_Commit_Window,SL_ALU3_Rdst;
+wire SL_ALU3_en;
+wire[5:0]SL_ALU3_Phydst,SL_ALU3_Src1,SL_ALU3_Src2;
+wire[5:0]SL_ALU3_operation;
+wire[31:0]SL_ALU3_imm;
 Issue_Window #(.DEPTH (16)) Issue_Window(
 .clk(clk),
 .rst(rst),
+.Stall(IS_Stall),
 .flush(1'b0),
 
 /*Inst1 in*/
@@ -703,12 +752,172 @@ Issue_Window #(.DEPTH (16)) Issue_Window(
 .Inst4_Src1(IS_Inst4_RSrc1),
 .Inst4_Src2(IS_Inst4_RSrc2),
 .Inst4_Rdst(IS_Inst4_Rdst),
-/*Issue Window*/
 
-.SL_ALU0_imm(DataMem_Address),
-.Issue_window_full(Issue_window_full)
+/*Commit Unit*/
+.Commit_1(Commit_1),
+.Commit_Phy_1(Commit_Phy_1),
+.Commit_Rdst_1(Commit_Rdst_1),
+
+/*Wake Src*/
+.ALU0_Commit(WB_ALU0_Valid),
+.ALU0_Phydst(WB_ALU0_Phydst),//TAG For wake
+.ALU1_Commit(WB_ALU1_Valid),
+.ALU1_Phydst(WB_ALU1_Phydst),//TAG For wake
+.ALU2_Commit(WB_ALU2_Valid),
+.ALU2_Phydst(WB_ALU2_Phydst),//TAG For wake
+.ALU3_Commit(WB_ALU3_Valid),
+.ALU3_Phydst(WB_ALU3_Phydst),//TAG For wake
+/*WB*/
+.WB_ALU0_Commit_Window(WB_ALU0_Commit_Window),
+.WB_ALU1_Commit_Window(WB_ALU1_Commit_Window),
+.WB_ALU2_Commit_Window(WB_ALU2_Commit_Window),
+.WB_ALU3_Commit_Window(WB_ALU3_Commit_Window),
+/*Issue Window*/
+.Issue_window_full(Issue_window_full),
+/*ALU Select*/
+
+/*Select For ALU0 Unit*/
+.SL_ALU0_Commit_Window(SL_ALU0_Commit_Window),
+.SL_ALU0_Rdst(SL_ALU0_Rdst),
+.SL_ALU0_en(SL_ALU0_en),
+.SL_ALU0_Phydst(SL_ALU0_Phydst),
+.SL_ALU0_Src1(SL_ALU0_Src1),
+.SL_ALU0_Src2(SL_ALU0_Src2),
+.SL_ALU0_operation(SL_ALU0_operation),
+.SL_ALU0_imm(SL_ALU0_imm),
+
+/*Select For ALU1 Unit*/
+.SL_ALU1_Commit_Window(SL_ALU1_Commit_Window),
+.SL_ALU1_Rdst(SL_ALU1_Rdst),
+.SL_ALU1_en(SL_ALU1_en),
+.SL_ALU1_Phydst(SL_ALU1_Phydst),
+.SL_ALU1_Src1(SL_ALU1_Src1),
+.SL_ALU1_Src2(SL_ALU1_Src2),
+.SL_ALU1_operation(SL_ALU1_operation),
+.SL_ALU1_imm(SL_ALU1_imm),
+
+/*Select For ALU2 Unit*/
+.SL_ALU2_Commit_Window(SL_ALU2_Commit_Window),
+.SL_ALU2_Rdst(SL_ALU2_Rdst),
+.SL_ALU2_en(SL_ALU2_en),
+.SL_ALU2_Phydst(SL_ALU2_Phydst),
+.SL_ALU2_Src1(SL_ALU2_Src1),
+.SL_ALU2_Src2(SL_ALU2_Src2),
+.SL_ALU2_operation(SL_ALU2_operation),
+.SL_ALU2_imm(SL_ALU2_imm),
+
+/*Select For ALU3 Unit*/
+.SL_ALU3_Commit_Window(SL_ALU3_Commit_Window),
+.SL_ALU3_Rdst(SL_ALU3_Rdst),
+.SL_ALU3_en(SL_ALU3_en),
+.SL_ALU3_Phydst(SL_ALU3_Phydst),
+.SL_ALU3_Src1(SL_ALU3_Src1),
+.SL_ALU3_Src2(SL_ALU3_Src2),
+.SL_ALU3_operation(SL_ALU3_operation),
+.SL_ALU3_imm(SL_ALU3_imm)
+
 );
 
+wire [31:0]EX_ALU0_Src1,EX_ALU0_Src2;
+wire [31:0]EX_ALU1_Src1,EX_ALU1_Src2;
+wire [31:0]EX_ALU2_Src1,EX_ALU2_Src2;
+wire [31:0]EX_ALU3_Src1,EX_ALU3_Src2;
+
+regfile #(.WIDTH(32),.DEPTH(64) )regfile(
+.clk(clk),
+.we_1(WB_ALU0_Valid),
+.we_2(WB_ALU1_Valid),
+.we_3(WB_ALU2_Valid),
+.we_4(WB_ALU3_Valid),
+.read_reg1(SL_ALU0_Src1),
+.read_reg2(SL_ALU0_Src2),
+.read_reg3(SL_ALU1_Src1),
+.read_reg4(SL_ALU1_Src2),
+.read_reg5(SL_ALU2_Src1),
+.read_reg6(SL_ALU2_Src2),
+.read_reg7(SL_ALU3_Src1),
+.read_reg8(SL_ALU3_Src2),
+.read_reg9(),
+.read_reg10(),
+.read_reg11(),
+.read_reg12(),
+.read_reg13(),
+.read_reg14(),
+.read_reg15(),
+.read_reg16(),
+.read_reg17(),
+.read_reg18(),
+.read_reg19(),
+.read_reg20(),
+
+.write_reg1(WB_ALU0_Phydst),
+.write_reg2(WB_ALU1_Phydst),
+.write_reg3(WB_ALU2_Phydst),
+.write_reg4(WB_ALU3_Phydst),
+.write_reg1_data(WB_ALU0_Result),
+.write_reg2_data(WB_ALU1_Result),
+.write_reg3_data(WB_ALU2_Result),
+.write_reg4_data(WB_ALU3_Result),
+
+.read_out_1(EX_ALU0_Src1),
+.read_out_2(EX_ALU0_Src2),
+.read_out_3(EX_ALU1_Src1),
+.read_out_4(EX_ALU1_Src2),
+.read_out_5(EX_ALU2_Src1),
+.read_out_6(EX_ALU2_Src2),
+.read_out_7(EX_ALU3_Src1),
+.read_out_8(EX_ALU3_Src2)/*,read_out_9,read_out_a0,read_out_11,read_out_12,
+output [WIDTH-1:0] read_out_13,read_out_14,read_out_15,read_out_16,read_out_17,read_out_18,
+output [WIDTH-1:0] read_out_19,read_out_20*/
+);
+
+
+EX_ALU EX_ALU0(
+.clk(clk),
+.rst(rst),
+.flush(1'b0),
+
+.EX_Rdst(SL_ALU0_Rdst),
+.EX_Operation(SL_ALU0_operation),
+.EX_imm(SL_ALU0_imm),
+.EX_Src1(EX_ALU0_Src1),
+.EX_Src2(EX_ALU0_Src2),
+.EX_Phydst(SL_ALU0_Phydst),
+.EX_Commit_Window(SL_ALU0_Commit_Window),
+.EX_en(SL_ALU0_en),
+ 
+.WB_Rdst(WB_ALU0_Rdst),
+.WB_Commit_Window(WB_ALU0_Commit_Window),
+.WB_Phydst(WB_ALU0_Phydst),
+.WB_Result(WB_ALU0_Result),
+.WB_valid(WB_ALU0_Valid)
+);
+
+EX_ALU EX_ALU1(
+.clk(clk),
+.rst(rst),
+.flush(1'b0),
+
+.EX_Rdst(SL_ALU1_Rdst),
+.EX_Operation(SL_ALU1_operation),
+.EX_imm(SL_ALU1_imm),
+.EX_Src1(EX_ALU1_Src1),
+.EX_Src2(EX_ALU1_Src2),
+.EX_Phydst(SL_ALU1_Phydst),
+.EX_Commit_Window(SL_ALU1_Commit_Window),
+.EX_en(SL_ALU1_en),
+ 
+.WB_Rdst(WB_ALU1_Rdst),
+.WB_Commit_Window(WB_ALU1_Commit_Window),
+.WB_Phydst(WB_ALU1_Phydst),
+.WB_Result(WB_ALU1_Result),
+.WB_valid(WB_ALU1_Valid)
+);
+
+
+
+
+assign DataMem_Address=WB_ALU1_Result;
 
 Stall_Unit Stall_Unit(
 .Issue_Window_Full(Issue_window_full),
@@ -718,14 +927,15 @@ Stall_Unit Stall_Unit(
 .IF_Stall(IF_Stall),
 .ID_Stall(ID_Stall),
 .RN_Stall(RN_Stall),
-.RT_Stall(RT_Stall),
+.DS_Stall(DS_Stall),
+.IS_Stall(IS_Stall),
 
 .Branch((Branch_out&Commit)),
 
 
 .IF_ID_flush(IF_ID_flush),
 .ID_RN_flush(ID_RN_flush),
-.RT_flush(RT_flush),
+.RN_DS_flush(RN_DS_flush),
 .Rename_flush(Rename_flush),
 .Issue_Window_flush(Issue_Window_flush),
 .Function_Unit_flush(Function_Unit_flush)
@@ -739,20 +949,21 @@ input Rename_fales,
 input Inst_Ready,
 input Branch,
 
-output IF_Stall,ID_Stall,RT_Stall,RN_Stall,
-output IF_ID_flush,ID_RN_flush,RT_flush,Rename_flush,
+output IF_Stall,ID_Stall,RN_Stall,DS_Stall,IS_Stall,
+output IF_ID_flush,ID_RN_flush,RN_DS_flush,Rename_flush,
 output Issue_Window_flush,Function_Unit_flush
 );
 
 assign IF_Stall=Issue_Window_Full|Rename_fales;
 assign ID_Stall=Issue_Window_Full|Rename_fales;
 assign RN_Stall=Issue_Window_Full|Rename_fales;
-assign RT_Stall=Issue_Window_Full;
-assign Rename_Stall=Issue_Window_Full;
+assign DS_Stall=Issue_Window_Full;
+assign IS_Stall=Issue_Window_Full;
+
 
 assign IF_ID_flush=Branch;
 assign ID_RN_flush=Branch;
-assign RT_flush=Branch;
+assign RN_DS_flush=Rename_fales&(!Issue_Window_Full);
 assign Rename_flush=Branch;
 assign Issue_Window_flush=Branch;
 assign Function_Unit_flush=Branch;

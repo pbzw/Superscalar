@@ -11,7 +11,7 @@
 //
 `timescale 1ns/100ps
 `include "define.v"
-`define commit_temp Processor.Rename_Unit.Commit_Mapping
+`define commit_temp Processor.Register_Rename.Commit_Mapping
 
 `define TestPattern 65535
 `include "define.v"
@@ -30,7 +30,7 @@ module MIPS_tb;
 	
 
     reg [31:0] ran;
-	integer i,j,seed1=1512,erro=0;
+	integer i,j,seed1=2552,erro=0;
 //	initial	$readmemh (`INST_ROM, inst_mem);
 	
 	//Rand Inst produce
@@ -85,18 +85,17 @@ Processor Processor(
 	.InstMem_Ready(InstMem_Ready),
     .InstMem_Read(InstMem_Read)
 );
-/*
+
 /////////Register Temp
 always@(*)
 begin
-if(Processor.Issue_Window.Commit)
 for(i=0;i<32;i=i+1)
  begin
  Register[i]=Processor.regfile.file[`commit_temp[i]];
  //$display ($time, " Register File R%2d = %32x " ,i,Processor.regfile.file[`commit_temp[i]]);
  end
-end*/
-
+end
+/*
 ////////Issue Window 
 always@(posedge clk)
 begin
@@ -104,7 +103,7 @@ $display ($time, "-------Issue Window-------" );
  for(i=0;i<16;i=i+1)
  begin
 
-  $display ($time," Issue Window%2d PC= %x Function=%4b Operation=%5b Oringin_Rdst=%d PhyRdst=%2d Src1=%2d Src2=%2d Src1_Wake=%d Src2_Wake=%d imm =%x Selected=%d IW_Can_Commited=%b" ,
+  $display ($time," Issue Window%2d PC= %x Function=%4b Operation=%5b Oringin_Rdst=%d PhyRdst=%2d Src1=%2d Src2=%2d Src1_Wake=%d Src2_Wake=%d imm =%x Selected=%d" ,
 	i
 	,Processor.Issue_Window.IW_PC[i]
 	,Processor.Issue_Window.IW_Function[i]
@@ -117,12 +116,11 @@ $display ($time, "-------Issue Window-------" );
 	,Processor.Issue_Window.IW_Src2_Wake[i]
 	,Processor.Issue_Window.IW_imm[i]
 	,Processor.Issue_Window.IW_Selected[i]
-	,Processor.Issue_Window.IW_Can_Commited[i]
 	);
 
  end
 end
-
+*/
 
 
 //Virtual Machine
@@ -145,21 +143,21 @@ assign VM_Rs=VM_inst_in[25:21];
 assign VM_Rt=VM_inst_in[20:16];
 assign VM_Rd=VM_inst_in[15:11];
 assign Funct=VM_inst_in[5:0];
-/*
+
 always@(posedge clk)
 begin
-if(Processor.Issue_Window.Commit)
+if(Processor.Issue_Window.Commit_1)
  begin
  VM_PC<=VM_PC+32'd4;
 
- case(VM_inst_in[31:26])
-    `Op_Ori :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1|{16'd0,VM_inst_in[15:0]};end 
+case(VM_inst_in[31:26])
+	`Op_Ori :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1|{16'd0,VM_inst_in[15:0]};end 
 	`Op_Andi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1&{16'd0,VM_inst_in[15:0]};end
 	`Op_Addi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1+{{16{VM_inst_in[15]}},VM_inst_in[15:0]};end
 	`Op_Xori:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1^{16'd0,VM_inst_in[15:0]};end
 	`Op_Lui :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<={VM_inst_in[15:0],16'd0};end
 	`Op_Type_R  :begin
-                        case (Funct)
+						case (Funct)
 							`Funct_Add     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1+data2 ; end
 							`Funct_Sub     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1-data2 ; end
 							`Funct_Or      :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1|data2 ; end
@@ -177,7 +175,7 @@ end
 
 always@(negedge clk)
 begin
-if(Processor.Issue_Window.Commit)
+if(Processor.Issue_Window.Commit_1)
  begin
      //$display ($time, "--------------------------" );
      $display ($time, " NOW at pattern %32d Instruction=%32x ERRO Count = %2d",VM_PC/4,VM_inst_in,erro);
@@ -190,6 +188,7 @@ if(Processor.Issue_Window.Commit)
       erro=erro+1;
 	  
 	  $display ($time, " ERRO! Register File R%2d != VM_Reg %2d " ,i,i);
+	  $display ($time, "  Virtual Reg [%2d] = %32x  Real Reg [%2d] = %32x",i,VM_Reg[i],i,Register[i]);
 	  $stop;
       end
 	 end
@@ -199,7 +198,7 @@ if(Processor.Issue_Window.Commit)
  end
 end
 
-*/
+
 //Sent inst to real machine
 
 always@(*)

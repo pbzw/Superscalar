@@ -61,7 +61,7 @@ output reg[31:0]DS_Inst4_imm
 always@(posedge clk)begin
 	if(rst|flush)
 		DS_Inst_PC<=32'd0;
-	else
+	else if(!Stall)
 		DS_Inst_PC<=RN_Inst_PC;
 end
 

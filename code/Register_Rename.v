@@ -66,21 +66,21 @@ wire [0:63]Phy_can_Used;
 assign Phy_can_Used=((~Phy_Using_Used)|can_use);
 assign flush_wake_Phy=Phy_Using_Used&(~Phy_Using_Committed);
 
-/*
-always@(*) begin
+
+always@(posedge clk) begin
 		for(i=0;i<64;i=i+1)
 			Commit_Mapping_used[i]<=1'd0;
 		for(i=0;i<32;i=i+1)
 			Commit_Mapping_used[Commit_Mapping[i]]<=1'd1;
 			Commit_Mapping_used[Commit_Phy]<=1'd1;
-end*/
-wire [4:0]out_1,out_2;
+end
+wire No_Phy;
 
 //Update Commit Map 
 always@(posedge clk)begin
 	if(rst)
 		for(i=0;i<32;i=i+1)
-			Commit_Mapping[i]<=5'b0;
+			Commit_Mapping[i]<=6'b0;
 	else if(Commit&(Commit_Rdst!=5'd0))
 		Commit_Mapping[Commit_Rdst]<=Commit_Phy;
 end
@@ -96,20 +96,19 @@ always@(posedge clk)begin
 			Temp_Mappling_Phy[Commit_Rdst]<= Commit_Phy;
 		end
 	else begin
-		if(Inst1_RegW&(!RU_Stall)&(Inst1_Rdst!=6'd0))
+		if(Inst1_RegW&(!Stall)&(Inst1_Rdst!=6'd0))
 			{Temp_Mappling_Phy[Inst1_Rdst]}<={RE_Inst1_RPhydst};
-		if(Inst2_RegW&(!RU_Stall)&(Inst2_Rdst!=6'd0))
+		if(Inst2_RegW&(!Stall)&(Inst2_Rdst!=6'd0))
 			{Temp_Mappling_Phy[Inst2_Rdst]}<={RE_Inst2_RPhydst};
-		if(Inst3_RegW&(!RU_Stall)&(Inst3_Rdst!=6'd0))
+		if(Inst3_RegW&(!Stall)&(Inst3_Rdst!=6'd0))
 			{Temp_Mappling_Phy[Inst3_Rdst]}<={RE_Inst3_RPhydst};
-		if(Inst4_RegW&(!RU_Stall)&(Inst4_Rdst!=6'd0))
+		if(Inst4_RegW&(!Stall)&(Inst4_Rdst!=6'd0))
 			{Temp_Mappling_Phy[Inst4_Rdst]}<={RE_Inst4_RPhydst};
 		end
 end
 reg  [5:0]j;
 always@(posedge clk)begin
 	if(rst) begin
-		{Phy_Using_Used[0],Phy_Using_Committed[0]}<=2'b11;
 		for(i=0;i<64;i=i+1)
 			{Phy_Using_Used[i],Phy_Using_Committed[i]}<=2'b00;
 		end
@@ -121,17 +120,18 @@ always@(posedge clk)begin
 			if(Commit)
 				{Phy_Using_Used[Commit_Phy],Phy_Using_Committed[Commit_Phy]}<=2'b11;
 			end
+		
 		if(Commit)begin
 			{Phy_Using_Committed[Commit_Phy]}<=1'b1;
 			end
 			
-		if(Inst1_RegW&(!RU_Stall)) 
+		if(Inst1_RegW&(!Stall)) 
 			{Phy_Using_Used[RE_Inst1_RPhydst],Phy_Using_Committed[RE_Inst1_RPhydst]}<=2'b10;
-		if(Inst2_RegW&(!RU_Stall)) 
+		if(Inst2_RegW&(!Stall)) 
 			{Phy_Using_Used[RE_Inst2_RPhydst],Phy_Using_Committed[RE_Inst2_RPhydst]}<=2'b10;
-		if(Inst3_RegW&(!RU_Stall)) 
+		if(Inst3_RegW&(!Stall)) 
 			{Phy_Using_Used[RE_Inst3_RPhydst],Phy_Using_Committed[RE_Inst3_RPhydst]}<=2'b10;
-		if(Inst4_RegW&(!RU_Stall)) 
+		if(Inst4_RegW&(!Stall)) 
 			{Phy_Using_Used[RE_Inst4_RPhydst],Phy_Using_Committed[RE_Inst4_RPhydst]}<=2'b10;
 
 		end
@@ -148,15 +148,15 @@ assign RE_Inst3_RSrc2=Temp_Mappling_Phy[Inst3_Src2];
 
 assign RE_Inst4_RSrc1=Temp_Mappling_Phy[Inst4_Src1];
 assign RE_Inst4_RSrc2=Temp_Mappling_Phy[Inst4_Src2];
-wire No_Phy;
+
 
 Physical_Register_Free_List  Physical_Register_Free_Buffer_List(
 
 .in(Phy_can_Used),//can_Use_Phy
-.Take1(Inst1_RegW),
-.Take2(Inst2_RegW),
-.Take3(Inst3_RegW),
-.Take4(Inst4_RegW),
+.Take1(Inst1_RegW&Inst1_Valid),
+.Take2(Inst2_RegW&Inst2_Valid),
+.Take3(Inst3_RegW&Inst3_Valid),
+.Take4(Inst4_RegW&Inst4_Valid),
 
 .Take_Phy1(RE_Inst1_RPhydst),
 .Take_Phy2(RE_Inst2_RPhydst),
@@ -165,7 +165,7 @@ Physical_Register_Free_List  Physical_Register_Free_Buffer_List(
 .Stall(No_Phy)
 );
 
-assign RU_Stall=Stall|No_Phy;
+assign RU_Stall=No_Phy;
 
 endmodule
 

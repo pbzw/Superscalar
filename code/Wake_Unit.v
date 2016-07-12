@@ -41,6 +41,12 @@ input ALU0_wake,
 //ALU1_wake
 input [5:0]ALU1_Phydst,
 input ALU1_wake,
+//ALU2_wake
+input [5:0]ALU2_Phydst,
+input ALU2_wake,
+//ALU3_wake
+input [5:0]ALU3_Phydst,
+input ALU3_wake,
 //BU_wake
 input [5:0]BU_Phydst,
 input BU_wake,
@@ -117,7 +123,7 @@ always@(posedge clk)begin
 	if(ALU0_wake)
 			Phy_Wake[ALU0_Phydst]<=1'b1;
 	if(ALU1_wake)
-			Phy_Wake[ALU0_Phydst]<=1'b1;
+			Phy_Wake[ALU1_Phydst]<=1'b1;
 	if(BU_wake)
 			Phy_Wake[BU_Phydst]<=1'b1;
 	if(DU_wake)
