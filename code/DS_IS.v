@@ -30,33 +30,7 @@ output reg IS_Inst2_Valid,
 output reg[8:0]IS_Inst2_ALUop,
 output reg[4:0]IS_Inst2_Rdst,
 output reg[5:0]IS_Inst2_RSrc1,IS_Inst2_RSrc2,IS_Inst2_Phydst,
-output reg[31:0]IS_Inst2_imm,IS_Inst2_PC,
-
-//Inst3
-input DS_Inst3_Valid,
-input[8:0]DS_Inst3_ALUop,
-input[4:0]DS_Inst3_Rdst,
-input[5:0]DS_Inst3_RSrc1,DS_Inst3_RSrc2,DS_Inst3_Phydst,
-input[31:0]DS_Inst3_imm,
-
-output reg IS_Inst3_Valid,
-output reg[8:0]IS_Inst3_ALUop,
-output reg[4:0]IS_Inst3_Rdst,
-output reg[5:0]IS_Inst3_RSrc1,IS_Inst3_RSrc2,IS_Inst3_Phydst,
-output reg[31:0]IS_Inst3_imm,IS_Inst3_PC,
-
-//Inst4
-input DS_Inst4_Valid,
-input[8:0]DS_Inst4_ALUop,
-input[4:0]DS_Inst4_Rdst,
-input[5:0]DS_Inst4_RSrc1,DS_Inst4_RSrc2,DS_Inst4_Phydst,
-input[31:0]DS_Inst4_imm,
-
-output reg IS_Inst4_Valid,
-output reg[8:0]IS_Inst4_ALUop,
-output reg[4:0]IS_Inst4_Rdst,
-output reg[5:0]IS_Inst4_RSrc1,IS_Inst4_RSrc2,IS_Inst4_Phydst,
-output reg[31:0]IS_Inst4_imm,IS_Inst4_PC
+output reg[31:0]IS_Inst2_imm,IS_Inst2_PC
 );
 
 always@(posedge clk) begin
@@ -106,51 +80,5 @@ always@(posedge clk) begin
 	end
 	
 
-always@(posedge clk) begin
-	if(rst|flush)begin
-		IS_Inst3_ALUop <=8'd0;
-		IS_Inst3_Rdst  <=5'd0;
-		IS_Inst3_RSrc1 <=6'd0;
-		IS_Inst3_RSrc2 <=6'd0;
-		IS_Inst3_Phydst<=6'd0;
-		IS_Inst3_imm   <=32'd0;
-		IS_Inst3_PC    <=32'd0;
-		IS_Inst3_Valid <=1'b0;
-		end
-	else if(!Stall)begin
-		IS_Inst3_ALUop <=DS_Inst3_ALUop;
-		IS_Inst3_Rdst  <=DS_Inst3_Rdst;
-		IS_Inst3_RSrc1 <=DS_Inst3_RSrc1;
-		IS_Inst3_RSrc2 <=DS_Inst3_RSrc2;
-		IS_Inst3_Phydst<=DS_Inst3_Phydst;
-		IS_Inst3_imm   <=DS_Inst3_imm;
-		IS_Inst3_PC    <=DS_Inst_PC+32'd8;
-		IS_Inst3_Valid <=DS_Inst3_Valid;
-		end
-	end
-
-always@(posedge clk) begin
-	if(rst|flush)begin
-		IS_Inst4_ALUop <=8'd0;
-		IS_Inst4_Rdst  <=5'd0;
-		IS_Inst4_RSrc1 <=6'd0;
-		IS_Inst4_RSrc2 <=6'd0;
-		IS_Inst4_Phydst<=6'd0;
-		IS_Inst4_imm   <=32'd0;
-		IS_Inst4_PC    <=32'd0;
-		IS_Inst4_Valid <=1'b0;
-		end
-	else if(!Stall)begin
-		IS_Inst4_ALUop <=DS_Inst4_ALUop;
-		IS_Inst4_Rdst  <=DS_Inst4_Rdst;
-		IS_Inst4_RSrc1 <=DS_Inst4_RSrc1;
-		IS_Inst4_RSrc2 <=DS_Inst4_RSrc2;
-		IS_Inst4_Phydst<=DS_Inst4_Phydst;
-		IS_Inst4_imm   <=DS_Inst4_imm;
-		IS_Inst4_PC    <=DS_Inst_PC+32'd12;
-		IS_Inst4_Valid <=DS_Inst4_Valid;
-		end
-	end
-	
 
 endmodule

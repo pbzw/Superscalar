@@ -13,14 +13,14 @@
 module EX_ALU(
  input clk,rst,flush,
  
- input [4:0]EX_Rdst,
+
  input [5:0]EX_Operation,
  input [31:0]EX_imm,EX_Src1,EX_Src2,
  input [5:0]EX_Phydst,
  input [3:0]EX_Commit_Window,
  input EX_en,
  
- output reg [4:0]WB_Rdst,
+
  output reg [3:0]WB_Commit_Window,
  output reg [5:0]WB_Phydst,
  output reg [31:0]WB_Result,
@@ -39,7 +39,7 @@ always@(posedge clk)begin
 		imm              <=32'd0;
 		Src1             <=32'd0;
 		Src2             <=32'd0;
-		Commit_Window    <= 5'd0;
+		Commit_Window    <= 4'd0;
 		Operation        <= 5'd0;
 		Phydst           <= 6'd0;
 		en               <= 1'b0;
@@ -65,15 +65,13 @@ ALU ALU(
  
 always@(posedge clk)begin
 	if(rst|flush)begin
-		WB_Commit_Window      <=4'd0;
-		WB_Rdst               <= 5'd0;
+		WB_Commit_Window      <= 4'd0;
 		WB_Result             <=32'd0;
 		WB_Phydst             <= 6'd0;
 		WB_valid              <= 1'd0;
 		end
 	else begin
 		WB_Commit_Window      <=Commit_Window;
-	   WB_Rdst               <=Rdst;
 		WB_Result             <=ALU_Result;
 		WB_Phydst             <=Phydst;
 		WB_valid              <=en;

@@ -31,29 +31,7 @@ input[31:0]ID_Inst2_Extend_imm,
 output reg[8:0] RN_Inst2_ALUop,
 output reg RN_Inst2_RegW,RN_Inst2_Instvalid,
 output reg[4:0]RN_Inst2_Src1,RN_Inst2_Src2,RN_Inst2_Rdst,
-output reg[31:0]RN_Inst2_Extend_imm,
-
-//Inst3
-input[8:0]ID_Inst3_ALUop,
-input ID_Inst3_RegW,ID_Inst3_Instvalid,
-input[4:0]ID_Inst3_Src1,ID_Inst3_Src2,ID_Inst3_Rdst,
-input[31:0]ID_Inst3_Extend_imm,
- 
-output reg[8:0] RN_Inst3_ALUop,
-output reg RN_Inst3_RegW,RN_Inst3_Instvalid,
-output reg[4:0]RN_Inst3_Src1,RN_Inst3_Src2,RN_Inst3_Rdst,
-output reg[31:0]RN_Inst3_Extend_imm,
-
-//Inst4
-input[8:0]ID_Inst4_ALUop,
-input ID_Inst4_RegW,ID_Inst4_Instvalid,
-input[4:0]ID_Inst4_Src1,ID_Inst4_Src2,ID_Inst4_Rdst,
-input[31:0]ID_Inst4_Extend_imm,
- 
-output reg[8:0] RN_Inst4_ALUop,
-output reg RN_Inst4_RegW,RN_Inst4_Instvalid,
-output reg[4:0]RN_Inst4_Src1,RN_Inst4_Src2,RN_Inst4_Rdst,
-output reg[31:0]RN_Inst4_Extend_imm
+output reg[31:0]RN_Inst2_Extend_imm
 );
 
 always@(posedge clk)begin
@@ -99,47 +77,5 @@ always@(posedge clk)begin
 		RN_Inst2_Extend_imm  <=ID_Inst2_Extend_imm; 
 		end
 	end	
-	
-always@(posedge clk)begin
-	if(rst|flush)begin
-		RN_Inst3_ALUop       <= 9'd0;
-		RN_Inst3_RegW        <= 1'd0;
-		RN_Inst3_Instvalid   <= 1'd0;
-		RN_Inst3_Src1        <= 5'd0;
-		RN_Inst3_Src2        <= 5'd0;
-		RN_Inst3_Rdst        <= 5'd0;
-		RN_Inst3_Extend_imm  <=32'd0;
-		end
-	else if(!stall)begin  
-		RN_Inst3_ALUop       <=ID_Inst3_ALUop;
-		RN_Inst3_RegW        <=ID_Inst3_RegW;
-		RN_Inst3_Instvalid   <=ID_Inst3_Instvalid;
-		RN_Inst3_Src1        <=ID_Inst3_Src1;
-		RN_Inst3_Src2        <=ID_Inst3_Src2;
-		RN_Inst3_Rdst        <=ID_Inst3_Rdst;
-		RN_Inst3_Extend_imm  <=ID_Inst3_Extend_imm; 
-		end
-	end	
-	
-always@(posedge clk)begin
-	if(rst|flush)begin
-		RN_Inst4_ALUop       <= 9'd0;
-		RN_Inst4_RegW        <= 1'd0;
-		RN_Inst4_Instvalid   <= 1'd0;
-		RN_Inst4_Src1        <= 5'd0;
-		RN_Inst4_Src2        <= 5'd0;
-		RN_Inst4_Rdst        <= 5'd0;
-		RN_Inst4_Extend_imm  <=32'd0;
 
-		end
-	else if(!stall)begin  
-		RN_Inst4_ALUop       <=ID_Inst4_ALUop;
-		RN_Inst4_RegW        <=ID_Inst4_RegW;
-		RN_Inst4_Instvalid   <=ID_Inst4_Instvalid;
-		RN_Inst4_Src1        <=ID_Inst4_Src1;
-		RN_Inst4_Src2        <=ID_Inst4_Src2;
-		RN_Inst4_Rdst        <=ID_Inst4_Rdst;
-		RN_Inst4_Extend_imm  <=ID_Inst4_Extend_imm;
-		end
-	end	
 endmodule

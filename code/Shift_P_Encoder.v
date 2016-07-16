@@ -33,83 +33,83 @@ Mux16 #(.WIDTH (4)) Mux16(
     .out(out)
     );
 	
-Encoder #(.fix(4'd0)) Encoder0 (
+PEncoder16#(.fix(4'd0)) Encoder0 (
 	.in(in),
 	.Select(En_out0)
 );
 
 
-Encoder #(.fix(4'd1)) Encoder1 (
+PEncoder16#(.fix(4'd1)) Encoder1 (
 	.in({in[1:15],in[0]}),
 	.Select(En_out1)
 );
 
-Encoder #(.fix(4'd2)) Encoder2 (
+PEncoder16#(.fix(4'd2)) Encoder2 (
 	.in({in[2:15],in[0:1]}),
 	.Select(En_out2)
 );
 
-Encoder #(.fix(4'd3)) Encoder3(
+PEncoder16#(.fix(4'd3)) Encoder3(
 	.in({in[3:15],in[0:2]}),
 	.Select(En_out3)
 );
 
-Encoder #(.fix(4'd4)) Encoder4(
+PEncoder16#(.fix(4'd4)) Encoder4(
 	.in({in[4:15],in[0:3]}),
 	.Select(En_out4)
 );
 
-Encoder #(.fix(4'd5)) Encoder5(
+PEncoder16#(.fix(4'd5)) Encoder5(
 	.in({in[5:15],in[0:4]}),
 	.Select(En_out5)
 );
 
-Encoder #(.fix(4'd6)) Encoder6(
+PEncoder16#(.fix(4'd6)) Encoder6(
 	.in({in[6:15],in[0:5]}),
 	.Select(En_out6)
 );
 
-Encoder #(.fix(4'd7)) Encoder7(
+PEncoder16#(.fix(4'd7)) Encoder7(
 	.in({in[7:15],in[0:6]}),
 	.Select(En_out7)
 );
 
-Encoder #(.fix(4'd8)) Encoder8(
+PEncoder16#(.fix(4'd8)) Encoder8(
 	.in({in[8:15],in[0:7]}),
 	.Select(En_out8)
 );
 
-Encoder #(.fix(4'd9)) Encoder9(
+PEncoder16#(.fix(4'd9)) Encoder9(
 	.in({in[9:15],in[0:8]}),
 	.Select(En_out9)
 );
 
-Encoder #(.fix(4'd10)) Encoder10(
+PEncoder16#(.fix(4'd10)) Encoder10(
 	.in({in[10:15],in[0:9]}),
 	.Select(En_out10)
 );
 
-Encoder #(.fix(4'd11)) Encoder11(
+PEncoder16#(.fix(4'd11)) Encoder11(
 	.in({in[11:15],in[0:10]}),
 	.Select(En_out11)
 );
 
-Encoder #(.fix(4'd12)) Encoder12(
+PEncoder16#(.fix(4'd12)) Encoder12(
 	.in({in[12:15],in[0:11]}),
 	.Select(En_out12)
 );
 
-Encoder #(.fix(4'd13)) Encoder13(
+PEncoder16#(.fix(4'd13)) Encoder13(
 	.in({in[13:15],in[0:12]}),
 	.Select(En_out13)
 );
 
-Encoder #(.fix(4'd14)) Encoder14(
+PEncoder16#(.fix(4'd14)) Encoder14(
 	.in({in[14:15],in[0:13]}),
 	.Select(En_out14)
 );
 
-Encoder #(.fix(4'd15)) Encoder15(
+PEncoder16#(.fix(4'd15)) Encoder15(
 	.in({in[15],in[0:14]}),
 	.Select(En_out15)
 );

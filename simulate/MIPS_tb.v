@@ -30,7 +30,7 @@ module MIPS_tb;
 	
 
     reg [31:0] ran;
-	integer i,j,seed1=2552,erro=0;
+	integer i,j,seed1=8122,erro=0;
 //	initial	$readmemh (`INST_ROM, inst_mem);
 	
 	//Rand Inst produce
@@ -80,8 +80,6 @@ Processor Processor(
 	.inst_address(InstMem_Address),
 	.inst1_in(inst1_in),
 	.inst2_in(inst2_in),
-	.inst3_in(inst3_in),
-	.inst4_in(inst4_in),
 	.InstMem_Ready(InstMem_Ready),
     .InstMem_Read(InstMem_Read)
 );
@@ -103,7 +101,7 @@ $display ($time, "-------Issue Window-------" );
  for(i=0;i<16;i=i+1)
  begin
 
-  $display ($time," Issue Window%2d PC= %x Function=%4b Operation=%5b Oringin_Rdst=%d PhyRdst=%2d Src1=%2d Src2=%2d Src1_Wake=%d Src2_Wake=%d imm =%x Selected=%d" ,
+  $display ($time," Issue Window%2d PC= %x Function=%4b Operation=%5b Oringin_Rdst=%d PhyRdst=%2d Src1=%2d Src2=%2d Src1_Wake=%d Src2_Wake=%d imm =%x Selected=%d Can_Commit=%b" ,
 	i
 	,Processor.Issue_Window.IW_PC[i]
 	,Processor.Issue_Window.IW_Function[i]
@@ -116,6 +114,7 @@ $display ($time, "-------Issue Window-------" );
 	,Processor.Issue_Window.IW_Src2_Wake[i]
 	,Processor.Issue_Window.IW_imm[i]
 	,Processor.Issue_Window.IW_Selected[i]
+	,Processor.Issue_Window.IW_Can_Commit[i]
 	);
 
  end
@@ -146,30 +145,55 @@ assign Funct=VM_inst_in[5:0];
 
 always@(posedge clk)
 begin
-if(Processor.Issue_Window.Commit_1)
- begin
- VM_PC<=VM_PC+32'd4;
+	if(Processor.Issue_Window.Commit_1)begin
+		VM_PC<=VM_PC+32'd4;
+		case(VM_inst_in[31:26])
+			`Op_Ori :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1|{16'd0,VM_inst_in[15:0]};end 
+			`Op_Andi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1&{16'd0,VM_inst_in[15:0]};end
+			`Op_Addi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1+{{16{VM_inst_in[15]}},VM_inst_in[15:0]};end
+			`Op_Xori:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1^{16'd0,VM_inst_in[15:0]};end
+			`Op_Lui :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<={VM_inst_in[15:0],16'd0};end
+			`Op_Type_R  :begin
+				case (Funct)
+					`Funct_Add     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1+data2 ; end
+					`Funct_Sub     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1-data2 ; end
+					`Funct_Or      :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1|data2 ; end
+					`Funct_Xor     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1^data2 ; end
+					`Funct_And     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1&data2 ; end
+					`Funct_Nor     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=~ (data1|data2); end
+					default        : ;
+				endcase
+				end
+			default:;
+		endcase
+		end
 
-case(VM_inst_in[31:26])
-	`Op_Ori :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1|{16'd0,VM_inst_in[15:0]};end 
-	`Op_Andi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1&{16'd0,VM_inst_in[15:0]};end
-	`Op_Addi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1+{{16{VM_inst_in[15]}},VM_inst_in[15:0]};end
-	`Op_Xori:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1^{16'd0,VM_inst_in[15:0]};end
-	`Op_Lui :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<={VM_inst_in[15:0],16'd0};end
-	`Op_Type_R  :begin
-						case (Funct)
-							`Funct_Add     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1+data2 ; end
-							`Funct_Sub     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1-data2 ; end
-							`Funct_Or      :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1|data2 ; end
-							`Funct_Xor     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1^data2 ; end
-							`Funct_And     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1&data2 ; end
-							`Funct_Nor     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=~ (data1|data2); end
-							default        : ;
-                        endcase
-				 end
-	default:;
- endcase
- end
+end
+
+always@(negedge clk)
+begin
+	if(Processor.Issue_Window.Commit_2)begin
+		VM_PC<=VM_PC+32'd4;
+		case(VM_inst_in[31:26])
+			`Op_Ori :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1|{16'd0,VM_inst_in[15:0]};end 
+			`Op_Andi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1&{16'd0,VM_inst_in[15:0]};end
+			`Op_Addi:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1+{{16{VM_inst_in[15]}},VM_inst_in[15:0]};end
+			`Op_Xori:begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<=data1^{16'd0,VM_inst_in[15:0]};end
+			`Op_Lui :begin if(VM_Rt!=5'd0)VM_Reg[VM_Rt]<={VM_inst_in[15:0],16'd0};end
+			`Op_Type_R  :begin
+				case (Funct)
+					`Funct_Add     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1+data2 ; end
+					`Funct_Sub     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1-data2 ; end
+					`Funct_Or      :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1|data2 ; end
+					`Funct_Xor     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1^data2 ; end
+					`Funct_And     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=   data1&data2 ; end
+					`Funct_Nor     :begin if(VM_Rd!=5'd0)VM_Reg[VM_Rd]<=~ (data1|data2); end
+					default        : ;
+				endcase
+				end
+			default:;
+		endcase
+		end
 
 end
 
@@ -207,8 +231,6 @@ always@(*)
 		begin	
 			inst1_in=rand_inst_mem[InstMem_Address[17:2]];
 			inst2_in=rand_inst_mem[InstMem_Address[17:2]+1];
-			inst3_in=rand_inst_mem[InstMem_Address[17:2]+2];
-			inst4_in=rand_inst_mem[InstMem_Address[17:2]+3];
 			InstMem_Ready=1;
 		end
 	else 
@@ -229,6 +251,8 @@ initial
 		begin
 			$display("============================================================================");
 			$display("\n \\(^o^)/  The simulation  finish\n");
+			$display("============================================================================");
+			$display("\n Execute Cycle %d Execute Instruction %d \n",$time/10,VM_PC/4);
 			$display("============================================================================");
 		$stop;
 		end
