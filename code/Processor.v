@@ -4,6 +4,10 @@
 module Processor(
 input clk,
 input rst,
+//
+input Inst1_maybe_Branch,Inst2_maybe_Branch,
+input [`data_lentgh-1:0]Pre_PC,
+input Branch_pre,
 // Instruction Memory
 output[`data_lentgh-1:0]inst_address,
 input [`data_lentgh-1:0]inst1_in,
@@ -22,8 +26,8 @@ output DataMem_access,DataMem_RW
 );
 /*IF Stage*/
 wire IF_Stall,IF_ID_flush;
-wire [31:0]PC_add_4,PCsrc_o;
-
+wire [31:0]PC_add_8,PC_add_4,PCsrc_o;
+wire [2:0]PCsrcSel;
 /*ID Stage*/
 wire [31:0]ID_PC;
 wire ID_Stall,ID_flush,ID_RN_flush;
@@ -120,9 +124,18 @@ wire[5:0]SL_BU_operation;
 wire[31:0]SL_BU_imm;
 wire[31:0]SL_BU_PC;
 
+wire[3:0]SL_DU_Commit_Window;
+wire SL_DU_en;
+wire[5:0]SL_DU_Phydst,SL_DU_Src1,SL_DU_Src2;
+wire[5:0]SL_DU_operation;
+wire[31:0]SL_DU_imm;
 /*EX Stage */
 wire EX_flush;
 wire [31:0]EX_BU_Src1,EX_BU_Src2;
+wire [31:0]EX_ALU0_Src1,EX_ALU0_Src2;
+wire [31:0]EX_ALU1_Src1,EX_ALU1_Src2;
+wire [31:0]EX_DU_Src1,EX_DU_Src2;
+
 /*Function Unit Write Back*/
 wire WB_ALU0_Valid,WB_ALU1_Valid,WB_BU_Reserve;
 wire WB_BU_Valid,WB_BU_Branch;
@@ -132,37 +145,59 @@ wire [5:0]WB_ALU0_Phydst,WB_ALU1_Phydst;
 wire [4:0]WB_ALU0_Rdst,WB_ALU1_Rdst;
 wire [3:0]WB_ALU0_Commit_Window,WB_ALU1_Commit_Window;
 wire [31:0]WB_ALU0_Result,WB_ALU1_Result,WB_Reserve_PC,WB_BU_Branch_PC;
-
+wire [31:0]WB_DU_Result;
+wire [5:0]WB_DU_Phydst;
+wire WB_DU_Write_Phy;
+wire WB_DU_valid;
+wire [3:0]WB_DU_Commit_Window;
 /*Commit Unit */
 wire Commit_1_Branch;
 wire Commit_1;
 wire [4:0]Commit_Rdst_1;
 wire [5:0]Commit_Phy_1;
-wire [31:0]Commit_1_Branch_PC;
+wire [31:0]Commit_1_Branch_PC,Commit_1_PC;
 wire Commit_2;
 wire [4:0]Commit_Rdst_2;
 wire [5:0]Commit_Phy_2;
 
-Add Add_pc(
+Add Add_pc_8(
 .A(inst_address),
 .B(32'd8),
+.C(PC_add_8)
+);
+
+Add Add_pc_4(
+.A(inst_address),
+.B(32'd4),
 .C(PC_add_4)
 );
 
 Register #(.WIDTH(32),.reset(32'h0000))PC(
 .clk(clk),
 .rst(rst),
-.en((!IF_Stall)),
+.en((!IF_Stall)|IF_ID_flush),
 .data_in(PCsrc_o),
 .data_out(inst_address)
 );
 
-Mux2 #(.WIDTH(32))PCsrcMux(
-.sel(Commit_1_Branch),
-.in0(PC_add_4),
-.in1(Commit_1_Branch_PC),
+Mux8 #(.WIDTH(32))PCsrcMux(
+.sel(PCsrcSel),
+.in0(PC_add_8),
+.in1(PC_add_4),
+.in2(Pre_PC),
+.in3(Commit_1_Branch_PC),
+.in4(Commit_1_PC+32'd8),
 .out(PCsrc_o)
 );
+wire [31:0]Inst2Mux_out;
+Mux2 #(.WIDTH(32))Inst2Mux(
+.sel(Inst2_maybe_Branch),
+.in0(inst2_in),
+.in1(32'b0),
+
+.out(Inst2Mux_out)
+);
+
 
 IF_ID IF_ID(
 .clk(clk),
@@ -170,11 +205,13 @@ IF_ID IF_ID(
 .stall(ID_Stall),
 .flush(IF_ID_flush),
 .IF_inst1_in(inst1_in),
-.IF_inst2_in(inst2_in),
+.IF_inst2_in(Inst2Mux_out),
 .IF_PC_in(inst_address),
 .inst_en(InstMem_Ready),
+.inst2_en(!Inst2_maybe_Branch),
 
 .ID_inst_en(ID_inst_en),
+.ID_inst2_en(ID_inst2_en),
 .ID_PC(ID_PC),
 .ID_inst1(ID_inst1),
 .ID_inst2(ID_inst2)
@@ -227,7 +264,7 @@ ID_RN ID_RN(
 //Inst2
 .ID_Inst2_ALUop(ID_Inst2_ALUop),
 .ID_Inst2_RegW(ID_Inst2_RegW),
-.ID_Inst2_Instvalid(ID_Inst2_Instvalid),
+.ID_Inst2_Instvalid(ID_inst2_en),
 .ID_Inst2_Src1(ID_Inst2_Src1),
 .ID_Inst2_Src2(ID_Inst2_Src2),
 .ID_Inst2_Rdst(ID_Inst2_Rdst),
@@ -457,11 +494,11 @@ Wake_Unit Wake_Unit(
 
 //BU_wake
 .BU_Phydst(WB_BU_Phydst),
-.BU_wake(WB_BU_Valid)/*,
+.BU_wake(WB_BU_Valid),
 //BU_wake
-input [5:0]DU_Phydst,
-input DU_wake,
-*/
+.DU_Phydst(WB_DU_Phydst),
+.DU_wake(WB_DU_valid)
+
 );
 
 
@@ -506,6 +543,7 @@ Issue_Window #(.DEPTH (16)) Issue_Window(
 .Commit_Rdst_1(Commit_Rdst_1),
 .Commit_1_Branch(Commit_1_Branch),
 .Commit_1_Branch_PC(Commit_1_Branch_PC),
+.Commit_1_PC(Commit_1_PC),
 
 .Commit_2(Commit_2),
 .Commit_Phy_2(Commit_Phy_2),
@@ -521,11 +559,13 @@ Issue_Window #(.DEPTH (16)) Issue_Window(
 .BU_Phydst(WB_BU_Phydst),
 .WB_BU_branch_PC(WB_BU_Branch_PC),
 .WB_BU_branch(WB_BU_Branch),
+.DU_Commit(WB_DU_valid),
+.DU_Phydst(WB_DU_Phydst),
 /*WB*/
 .WB_ALU0_Commit_Window(WB_ALU0_Commit_Window),
 .WB_ALU1_Commit_Window(WB_ALU1_Commit_Window),
 .WB_BU_Commit_Window(WB_BU_Commit_Window),
-
+.WB_DU_Commit_Window(WB_DU_Commit_Window),
 /*Issue Window*/
 .Issue_window_full(Issue_window_full),
 /*ALU Select*/
@@ -556,13 +596,18 @@ Issue_Window #(.DEPTH (16)) Issue_Window(
 .SL_BU_Src2(SL_BU_Src2),
 .SL_BU_operation(SL_BU_operation),
 .SL_BU_imm(SL_BU_imm),
-.SL_BU_PC(SL_BU_PC)
+.SL_BU_PC(SL_BU_PC),
+//Select For Data Unit
+.SL_DU_Commit_Window(SL_DU_Commit_Window),
+.SL_DU_en(SL_DU_en),
+.SL_DU_Rdst(SL_DU_Phydst),
+.SL_DU_Src1(SL_DU_Src1),
+.SL_DU_Src2(SL_DU_Src2),
+.SL_DU_operation(SL_DU_operation),
+.SL_DU_imm(SL_DU_imm)
 );
 
 
-
-wire [31:0]EX_ALU0_Src1,EX_ALU0_Src2;
-wire [31:0]EX_ALU1_Src1,EX_ALU1_Src2;
 
 
 regfile #(.WIDTH(32),.DEPTH(64) )regfile(
@@ -570,25 +615,25 @@ regfile #(.WIDTH(32),.DEPTH(64) )regfile(
 .we_1(WB_ALU0_Valid),
 .we_2(WB_ALU1_Valid),
 .we_3(WB_BU_Reserve),
-.we_4(),
+.we_4(WB_DU_Write_Phy),
 .read_reg1(SL_ALU0_Src1),
 .read_reg2(SL_ALU0_Src2),
 .read_reg3(SL_ALU1_Src1),
 .read_reg4(SL_ALU1_Src2),
 .read_reg5(SL_BU_Src1),
 .read_reg6(SL_BU_Src2),
-.read_reg7(),
-.read_reg8(),
+.read_reg7(SL_DU_Src1),
+.read_reg8(SL_DU_Src2),
 
 
 .write_reg1(WB_ALU0_Phydst),
 .write_reg2(WB_ALU1_Phydst),
 .write_reg3(WB_BU_Phydst),
-.write_reg4(),
+.write_reg4(WB_DU_Phydst),
 .write_reg1_data(WB_ALU0_Result),
 .write_reg2_data(WB_ALU1_Result),
 .write_reg3_data(WB_Reserve_PC),
-.write_reg4_data(),
+.write_reg4_data(WB_DU_Result),
 
 .read_out_1(EX_ALU0_Src1),
 .read_out_2(EX_ALU0_Src2),
@@ -596,8 +641,8 @@ regfile #(.WIDTH(32),.DEPTH(64) )regfile(
 .read_out_4(EX_ALU1_Src2),
 .read_out_5(EX_BU_Src1),
 .read_out_6(EX_BU_Src2),
-.read_out_7(),
-.read_out_8()
+.read_out_7(EX_DU_Src1),
+.read_out_8(EX_DU_Src2)
 );
 
 
@@ -661,15 +706,42 @@ EX_BU EX_BU(
 .WB_Reserve_PC(WB_Reserve_PC)
 );
 
+EX_DU EX_DU(
+.clk(clk),
+.rst(rst),
+.flush(EX_flush),
+.EX_Operation(SL_DU_operation),
+.EX_imm(SL_DU_imm),
+.EX_Src1(EX_DU_Src1),
+.EX_Src2(EX_DU_Src2),
+.EX_PhyRdst(SL_DU_Phydst),
+.EX_Commit_window(SL_DU_Commit_Window),
+.EX_en(SL_DU_en),
+ 
+ /*to memory*/
+.Memory_sel(DataMem_Select),
+.Memory_Address(DataMem_Address),
+.Memory_Write_Data(WriteDataMem),
+.Memory_RW(DataMem_RW),
+.Memory_access(DataMem_access),
+ /*from memory*/
+.Memory_Read_Data(ReadDataMem),
+.Memory_Ready(DataMem_Ready),
+ /**/
+.WB_data(WB_DU_Result),
+.WB_Commit_window(WB_DU_Commit_Window),
+.WB_PhyRdst(WB_DU_Phydst),
+.WB_valid(WB_DU_valid),
+.WB_Write_Phy(WB_DU_Write_Phy)
+);
 
 
-assign DataMem_Address=WB_ALU1_Result;
 
-Stall_Unit Stall_Unit(
+System_Ctrl_Unit System_Ctrl_Unit(
 .Issue_Window_Full(Issue_window_full),
 .Rename_fales(RU_Stall),
 .Inst_Ready(InstMem_Ready),
-
+.Commit(Commit_1),
 .IF_Stall(IF_Stall),
 .ID_Stall(ID_Stall),
 .RN_Stall(RN_Stall),
@@ -677,7 +749,10 @@ Stall_Unit Stall_Unit(
 .IS_Stall(IS_Stall),
 
 .Branch(Commit_1_Branch),
-
+.Branch_pre(Branch_pre),
+.Inst1_maybe_Branch(Inst1_maybe_Branch),
+.Inst2_maybe_Branch(Inst2_maybe_Branch),
+.PCsrcSel(PCsrcSel),
 
 .IF_ID_flush(IF_ID_flush),
 .ID_RN_flush(ID_RN_flush),
@@ -689,26 +764,48 @@ Stall_Unit Stall_Unit(
 endmodule
 
 
-module Stall_Unit(
+module System_Ctrl_Unit(
 input Issue_Window_Full,
 input Rename_fales,
 input Inst_Ready,
 input Branch,
-
+input Branch_pre,
+input Inst1_maybe_Branch,
+input Inst2_maybe_Branch,
+input Commit,
+output reg[2:0]PCsrcSel,
 output IF_Stall,ID_Stall,RN_Stall,DS_Stall,IS_Stall,
 output IF_ID_flush,ID_RN_flush,RN_DS_flush,DS_IS_flush,EX_flush
 );
+wire Branch_flush=(Branch^Branch_pre)&Commit;
 
-assign IF_Stall=(Issue_Window_Full|Rename_fales)&(!Branch);
+
+assign IF_Stall=(Issue_Window_Full|Rename_fales)&(!Branch_flush);
 assign ID_Stall=Issue_Window_Full|Rename_fales;
 assign RN_Stall=Issue_Window_Full|Rename_fales;
 assign DS_Stall=Issue_Window_Full;
 assign IS_Stall=Issue_Window_Full;
 
 
-assign IF_ID_flush=Branch;
-assign ID_RN_flush=Branch;
-assign RN_DS_flush=(Rename_fales&!IS_Stall)|Branch;
-assign DS_IS_flush=Branch;
-assign EX_flush   =Branch;
+assign IF_ID_flush=Branch_flush;
+assign ID_RN_flush=Branch_flush;
+assign RN_DS_flush=(Rename_fales&!IS_Stall)|Branch_flush;
+assign DS_IS_flush=Branch_flush;
+assign EX_flush   =Branch_flush;
+
+
+
+always @(*)begin
+	casex({Branch&Commit,Branch_pre&Commit,Inst1_maybe_Branch,Inst2_maybe_Branch})
+	4'b0000:PCsrcSel=3'b000;
+	4'b0001:PCsrcSel=3'b001;
+	4'b1101:PCsrcSel=3'b001;
+	4'b0010:PCsrcSel=3'b010;
+	4'b1110:PCsrcSel=3'b010;
+	4'b10xx:PCsrcSel=3'b011;
+	4'b01xx:PCsrcSel=3'b100;
+	default:PCsrcSel=3'b000;
+	endcase
+end
+
 endmodule

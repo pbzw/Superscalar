@@ -45,7 +45,7 @@ output [31:0]Commit_1_Branch_PC,Commit_1_PC,
 output Commit_2,
 output [5:0]Commit_Phy_2,
 output [4:0]Commit_Rdst_2,
-output Commit_2_Branch,
+output [31:0]Commit_2_PC,
 
 /* From Function Unit Wake*/
 input ALU0_Commit,ALU1_Commit,
@@ -54,7 +54,7 @@ input [5:0]ALU0_Phydst,ALU1_Phydst,//TAG For wake
 
 input DU_Commit,
 input [5:0]DU_Phydst,//TAG For wake
-input [$clog2(DEPTH)-1:0]DU_Commit_Window,
+input [$clog2(DEPTH)-1:0]WB_DU_Commit_Window,
 input DU_busy,
 
 input BU_Commit,WB_BU_branch,
@@ -115,8 +115,8 @@ reg IW_Can_Commit[0:15];
 
 assign Issue_window_full=Inst_Counter>5'd14;
 wire [2:0]ALU0_P_E_out,ALU1_P_E_out;
-wire [3:0]BU_P_E_out;
-wire ALU0_P_E_valid,ALU1_P_E_valid,BU_P_E_valid;
+wire [3:0]BU_P_E_out,DU_P_E_out;
+wire ALU0_P_E_valid,ALU1_P_E_valid,BU_P_E_valid,DU_P_E_valid;
 wire [3:0]ALU0_Take_Window={ALU0_P_E_out,1'b0};
 wire [3:0]ALU1_Take_Window={ALU1_P_E_out,1'b1};
 
@@ -189,10 +189,10 @@ always@(posedge clk) begin
 			end
 		end
 	else begin
-		if(ALU0_Commit|ALU1_Commit|BU_Commit) begin
+		if(ALU0_Commit|ALU1_Commit|BU_Commit|DU_Commit) begin
 			for(i=0;i<16;i=i+1)begin
-				IW_Src1_Wake[i]<=IW_Src1_Wake[i]|(IW_Src1[i]==ALU0_Phydst)|(IW_Src1[i]==ALU1_Phydst)|(IW_Src1[i]==BU_Phydst)/*|(IW_Src1[i]===DU_Phydst)*/;
-				IW_Src2_Wake[i]<=IW_Src2_Wake[i]|(IW_Src2[i]==ALU0_Phydst)|(IW_Src2[i]==ALU1_Phydst)|(IW_Src2[i]==BU_Phydst)/*|(IW_Src2[i]===DU_Phydst)*/;
+				IW_Src1_Wake[i]<=IW_Src1_Wake[i]|(IW_Src1[i]==ALU0_Phydst)|(IW_Src1[i]==ALU1_Phydst)|(IW_Src1[i]==BU_Phydst)|(IW_Src1[i]==DU_Phydst);
+				IW_Src2_Wake[i]<=IW_Src2_Wake[i]|(IW_Src2[i]==ALU0_Phydst)|(IW_Src2[i]==ALU1_Phydst)|(IW_Src2[i]==BU_Phydst)|(IW_Src2[i]==DU_Phydst);
 				end
 			end
 		if(Inst1_Valid&(!Issue_window_full)&(!Stall))begin
@@ -235,7 +235,9 @@ always@(posedge clk) begin
 		if(BU_P_E_valid)begin
 			IW_Selected[BU_P_E_out]    <=1'b1;
 			end
-			
+		if(DU_P_E_valid)begin
+			IW_Selected[DU_P_E_out]    <=1'b1;
+			end
 			
 			
 		end
@@ -247,11 +249,13 @@ assign Commit_Rdst_1=IW_Rdst[read_address];
 assign Commit_1_Branch=IW_Branch[read_address]&Commit_1;
 assign Commit_1_Branch_PC=IW_Branch_PC[read_address];
 assign Commit_1_PC=IW_PC[read_address];
+wire   Commit_1_valid=IW_Inst_Valid[read_address];
 
 assign Commit_2=IW_Can_Commit[read_address2]&Commit_1&(!IW_Function[read_address2][1]);
 assign Commit_Phy_2=IW_PhyRdst[read_address2];
 assign Commit_Rdst_2=IW_Rdst[read_address2];
-
+assign Commit_2_PC=IW_PC[read_address2];
+wire   Commit_2_valid=IW_Inst_Valid[read_address2];
 
 always@(posedge clk) begin
 	if(rst|flush)begin
@@ -264,7 +268,7 @@ always@(posedge clk) begin
 	else begin
 			case({Commit_1,Commit_2})
 				2'b10:begin IW_Can_Commit[read_address]<=1'b0; IW_Branch[read_address]<=1'b0;end
-				2'b11:begin IW_Can_Commit[read_address]<=1'b0;IW_Can_Commit[read_address2]<=1'b0; end
+				2'b11:begin IW_Can_Commit[read_address]<=1'b0;IW_Can_Commit[read_address2]<=1'b0;IW_Branch[read_address]<=1'b0; end
 				endcase
 				//IW_Can_Commit[read_address]<=1'b0;
 			if(ALU0_Commit)begin
@@ -278,6 +282,9 @@ always@(posedge clk) begin
 				IW_Branch_PC[WB_BU_Commit_Window] <=WB_BU_branch_PC;
 				IW_Can_Commit[WB_BU_Commit_Window]<=1'b1;
 				end
+			if(DU_Commit)begin
+				IW_Can_Commit[WB_DU_Commit_Window]<=1'b1;
+				end
 		end
 end
 
@@ -287,7 +294,7 @@ reg [0:15]ALU_Can_Issue;
 reg [0:15]BU_Can_Issue;
 reg [0:15]Load_Can_Issue;
 reg [0:15]Store_Can_Issue;
-wire[0:7]Slot_ALU0,Slot_ALU1,Slot_ALU2,Slot_ALU3;
+wire[0:7]Slot_ALU0,Slot_ALU1;
 
 always@(*)begin
 	for (j=0;j<16;j=j+1)begin
@@ -322,13 +329,22 @@ Shift_P_Encoder16 BU_P_E(
 .out(BU_P_E_out),
 .valid(BU_P_E_valid)
 );
+
+Shift_P_LS_Encoder DU_Select_Shift_P_Encoder(
+.Shift_base(read_address),
+.Load_req(Load_Can_Issue),
+.Store_req(Store_Can_Issue),
+.Select(DU_P_E_out),
+.valid(DU_P_E_valid)
+);
 reg [3:0]ALU0_select;
 reg ALU0_Issue_req;
 reg [3:0]ALU1_select;
 reg ALU1_Issue_req;
 reg [3:0]BU_select;
 reg BU_Issue_req;
-
+reg [3:0]DU_select;
+reg DU_Issue_req;
 always@(posedge clk)begin
 	if(rst|flush)begin
 		ALU0_select   <=4'd0;
@@ -337,6 +353,8 @@ always@(posedge clk)begin
 		ALU1_Issue_req<=1'd0;
 		BU_select     <=4'd0;
 		BU_Issue_req  <=1'd0;
+		DU_select     <=4'd0;
+		DU_Issue_req  <=1'd0;
 		end
 	else begin
 		ALU0_select   <=ALU0_Take_Window;
@@ -345,6 +363,8 @@ always@(posedge clk)begin
 		ALU1_Issue_req<=ALU1_P_E_valid;
 		BU_select     <=BU_P_E_out;
 		BU_Issue_req  <=BU_P_E_valid;
+		DU_select     <=DU_P_E_out;
+		DU_Issue_req  <=DU_P_E_valid;
 
 		end
 end
@@ -413,4 +433,24 @@ always@(posedge clk)begin
 		SL_BU_PC               <=IW_PC[BU_select];
 		end
 	end	
+always@(posedge clk)begin
+	if((rst|flush)|(!DU_Issue_req))begin
+		SL_DU_Commit_Window    <= 4'd0;
+		SL_DU_operation        <= 5'd0;
+		SL_DU_imm              <=32'd0;
+		SL_DU_Rdst             <= 6'd0;
+		SL_DU_Src1             <= 6'd0;
+		SL_DU_Src2             <= 6'd0;
+		SL_DU_en               <= 1'd0;
+		end
+	else if(!(SL_DU_en&DU_busy))begin
+		SL_DU_Commit_Window    <=DU_select;
+		SL_DU_operation        <=IW_Operation[DU_select];
+		SL_DU_imm              <=IW_imm[DU_select];
+		SL_DU_Rdst             <=IW_PhyRdst[DU_select];
+		SL_DU_Src1             <=IW_Src1[DU_select];
+		SL_DU_Src2             <=IW_Src2[DU_select];
+		SL_DU_en               <=1'b1;
+		end
+	end
 endmodule

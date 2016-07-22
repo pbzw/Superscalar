@@ -19,7 +19,7 @@ module MIPS_branch_tb;
 	reg [`data_lentgh-1:0] rand_inst_mem[0:`TestPattern-1];
 
 	reg [31:0] ran;
-	integer i,j,seed1=13543,erro=0;
+	integer i,j,seed1=1543,erro=0;
 	
 	//Rand Inst produce
 	reg [5:0]inst_type[0:15];//ADDi,Ori,Andi,Xori

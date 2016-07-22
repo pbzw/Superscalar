@@ -1,0 +1,11 @@
+30040000	//; <input:0> andi $a0, $zero, 0
+30020000	//; <input:1> andi $v0, $zero, 0
+340700ff	//; <input:2> ori $a3, $zero, 255
+340300ff	//; <input:3> ori $v1, $zero, 255
+8c850000	//; <input:5> lw $a1, 0($a0)
+2063ffff	//; <input:6> addi $v1, $v1, -1
+00a73024	//; <input:7> addi $a0, $a0, 1
+20840001	//; <input:8> add $v0, $v0, $a2
+00461020	//; <input:9> and $a2, $a1, $a3
+1403fffa	//; <input:10> bne $zero,$v1,Loop
+00000000	//; <input:11> and $a0,$a0,$a0
