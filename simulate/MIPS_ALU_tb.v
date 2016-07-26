@@ -6,7 +6,7 @@
 `define commit_temp Processor.Register_Rename.Commit_Mapping
 `define RM_PC Processor.Commit_1_Branch_PC
 
-module MIPS_branch_tb;
+module MIPS_ALU_tb;
 
 	reg clk;
 	reg rst;
@@ -34,13 +34,13 @@ initial begin
 	inst_type[03]=`Op_Xori;
 	inst_type[04]=`Op_Lui;
 	inst_type[05]=`Op_Type_R;
-	inst_type[06]=`Op_J;
-	inst_type[07]=`Op_Jal;
-	inst_type[08]=`Op_Beq;
-	inst_type[09]=`Op_Bgtz;
-	inst_type[10]=`Op_Blez;
-	inst_type[11]=`Op_Bne;
-	inst_type[12]=`Op_Type_Regimm;
+	inst_type[06]=`Op_Type_R;
+	inst_type[07]=`Op_Type_R;
+	inst_type[08]=`Op_Type_R;
+	inst_type[09]=`Op_Type_R;
+	inst_type[10]=`Op_Type_R;
+	inst_type[11]=`Op_Type_R;
+	inst_type[12]=`Op_Ori;
 	
 	inst_type[13]=`Op_Ori;
 	inst_type[14]=`Op_Andi;
@@ -62,8 +62,8 @@ initial begin
 	inst_Funct[11]=`Funct_Or;
 	inst_Funct[12]=`Funct_Xor;
 	inst_Funct[13]=`Funct_And;
-	inst_Funct[14]=`Funct_Jalr;
-	inst_Funct[15]=`Funct_Jr;
+	inst_Funct[14]=`Funct_Xor;
+	inst_Funct[15]=`Funct_Xor;
 	end
 	
 initial begin

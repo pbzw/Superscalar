@@ -1,0 +1,25 @@
+34040400 //; <input:0> ori $a0, $zero, 1024
+34050000 //; <input:1> ori $a1, $zero, 0
+3407001d //; <input:2> ori $a3, $zero, 29
+3406001d //; <input:4> ori $a2, $zero, 29
+8cad0022 //; <input:6> lw $t5, 34($a1)
+8cab0020 //; <input:7> lw $t3, 32($a1)
+8cb00042 //; <input:8> lw $s0, 66($a1)
+8cae0040 //; <input:9> lw $t6, 64($a1)
+8ca80000 //; <input:10> lw $t0, 0($a1)
+01abb020 //; <input:11> add $s6, $t5, $t3
+8caa0002 //; <input:12> lw $t2, 2($a1)
+34150000 //; <input:13> ori $s5, $zero, 0
+01d0b820 //; <input:14> add $s7, $t6, $s0
+010aa820 //; <input:15> add $s5, $t0, $t2
+02d6b020 //; <input:16> add $s6, $s6, $s6
+02b6d020 //; <input:17> add $k0, $s5, $s6
+20a50001 //; <input:18> addi $a1, $a1, 1
+20c6ffff //; <input:19> addi $a2, $a2, -1
+02fad020 //; <input:20> add $k0, $s7, $k0
+ac9a0021 //; <input:21> sw $k0, 33($a0)
+14c0ffef //; <input:22> bne $a2, $zero, Loopx
+00000000 //; <input:23> sll
+20e7ffff //; <input:24> addi $a3, $a3, -1
+14e0ffeb //; <input:25> bne $a3, $zero, Loopy
+00000000 //; <input:26> sll

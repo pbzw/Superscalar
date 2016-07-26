@@ -443,7 +443,7 @@ always@(posedge clk)begin
 		SL_DU_Src2             <= 6'd0;
 		SL_DU_en               <= 1'd0;
 		end
-	else if(!(SL_DU_en&DU_busy))begin
+	else begin
 		SL_DU_Commit_Window    <=DU_select;
 		SL_DU_operation        <=IW_Operation[DU_select];
 		SL_DU_imm              <=IW_imm[DU_select];

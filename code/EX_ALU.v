@@ -63,19 +63,19 @@ ALU ALU(
 	.Result(ALU_Result)
 );
  
-always@(posedge clk)begin
-	if(rst|flush)begin
+always@(/*posedge clk*/*)begin
+	/*if(rst|flush)begin
 		WB_Commit_Window      <= 4'd0;
 		WB_Result             <=32'd0;
 		WB_Phydst             <= 6'd0;
 		WB_valid              <= 1'd0;
 		end
-	else begin
+	else begin*/
 		WB_Commit_Window      <=Commit_Window;
 		WB_Result             <=ALU_Result;
 		WB_Phydst             <=Phydst;
 		WB_valid              <=en;
-		end
+		//end
 end
 
 endmodule

@@ -36,42 +36,63 @@ module MIPS_tb;
 	//Rand Inst produce
 	reg [5:0]inst_type[0:7];//ADDi,Ori,Andi,Xori
 	reg [5:0]inst_Funct[0:7];
-	initial
-	 begin
-	  inst_type[0]=`Op_Ori;
-	  inst_type[1]=`Op_Andi;
-	  inst_type[2]=`Op_Addi;
-	  inst_type[3]=`Op_Xori;
-	  inst_type[4]=`Op_Lui;
-	  inst_type[5]=`Op_Type_R;
-	  inst_type[6]=`Op_Type_R;
-	  inst_type[7]=`Op_Type_R;
-	 end
+initial begin
+	inst_type[00]=`Op_Ori;
+	inst_type[01]=`Op_Andi;
+	inst_type[02]=`Op_Addi;
+	inst_type[03]=`Op_Xori;
+	inst_type[04]=`Op_Lui;
+	inst_type[05]=`Op_Type_R;
+	inst_type[06]=`Op_Ori;
+	inst_type[07]=`Op_Andi;
+	end
 	
-	initial
-	 begin
-	  inst_Funct[0]=`Funct_Sub;
-	  inst_Funct[1]=`Funct_Add;
-	  inst_Funct[2]=`Funct_Nor;
-	  inst_Funct[3]=`Funct_Or;
-	  inst_Funct[4]=`Funct_Xor;
-	  inst_Funct[5]=`Funct_And;
-	  inst_Funct[6]=`Funct_Nor;
-	  inst_Funct[7]=`Funct_Or;
-	 end
+initial begin
+	inst_Funct[00]=`Funct_Sub;
+	inst_Funct[01]=`Funct_Add;
+	inst_Funct[02]=`Funct_Nor;
+	inst_Funct[03]=`Funct_Or;
+	inst_Funct[04]=`Funct_Xor;
+	inst_Funct[05]=`Funct_And;
+	inst_Funct[06]=`Funct_And;
+	inst_Funct[07]=`Funct_Xor;
+	end
 	
-	initial
-	begin
-	 for(i=0;i<`TestPattern;i=i+1)
-	  begin
 
-	  ran =$random(seed1);
-	  case (inst_type[ran[31:29]])
-	  `Op_Type_R:rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:11],5'b0,inst_Funct[ran[2:0]]};
-	  default:
-	   rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:0]};
-	  endcase
-      end
+	
+initial begin
+		for(i=0;i<`TestPattern;i=i+1)begin
+		ran =$random(seed1);
+			case (inst_type[ran[31:29]])
+				`Op_Type_R:rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:11],5'b0,inst_Funct[ran[2:0]]};
+
+				`Op_J     :begin 
+					rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:11],5'b0,inst_Funct[ran[2:0]]};
+					rand_inst_mem[i+1]=32'd0 ;
+					i=i+1;end
+				`Op_Jal   :begin 
+					rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:11],5'b0,inst_Funct[ran[2:0]]}; 
+					rand_inst_mem[i+1]=32'd0 ; 
+					i=i+1;end
+				`Op_Beq   :begin 
+					rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:0]};
+					rand_inst_mem[i+1]=32'd0 ;
+					i=i+1; end
+				`Op_Bgtz  :begin 
+					rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:21],5'b0,ran[15:0]}; 
+					rand_inst_mem[i+1]=32'd0 ;
+					i=i+1; end
+				`Op_Blez  :begin 
+					rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:21],5'b0,ran[15:0]}; 
+					rand_inst_mem[i+1]=32'd0 ; 
+					i=i+1; end
+				`Op_Bne   :begin 
+					rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:0]};
+					rand_inst_mem[i+1]=32'd0 ;
+					i=i+1; end
+				default:rand_inst_mem[i]={inst_type[ran[31:29]],ran[25:0]};
+			endcase
+		end
 	end
 	
 Processor Processor(
@@ -93,7 +114,7 @@ for(i=0;i<32;i=i+1)
  //$display ($time, " Register File R%2d = %32x " ,i,Processor.regfile.file[`commit_temp[i]]);
  end
 end
-/*
+
 ////////Issue Window 
 always@(posedge clk)
 begin
@@ -119,7 +140,7 @@ $display ($time, "-------Issue Window-------" );
 
  end
 end
-*/
+
 
 
 //Virtual Machine

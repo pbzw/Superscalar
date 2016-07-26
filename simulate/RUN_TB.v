@@ -4,7 +4,7 @@
 `define commit_signal Processor.Issue_Window.Commit_1
 `define commit_temp Processor.Register_Rename.Commit_Mapping
 `define RM_PC Processor.Commit_1_Branch_PC
-`define INST_ROM "./test_program.txt"
+`define INST_ROM "./sobel.txt"
 module MIPS_RUN_tb;
 
 	reg clk;
@@ -15,7 +15,7 @@ module MIPS_RUN_tb;
 	reg [`data_lentgh-1:0] inst_mem[0:1023];
 	reg [`data_lentgh-1:0] inst1_in,inst2_in;
 	reg [`data_lentgh-1:0] Register[0:31];
-	reg [7:0]RM_DataMemory[0:1023];
+	reg [7:0]RM_DataMemory[0:2047];
 	initial	$readmemh (`INST_ROM, inst_mem);
 	wire[`data_lentgh-1:0]DataMem_Address;
 	reg [`data_lentgh-1:0]ReadDataMem;
@@ -147,8 +147,8 @@ $display ("--------------------------" );
 	);
 
  end
-end
-*/
+end*/
+
 
 always@(posedge clk)begin
 	if(Processor.Issue_Window.Commit_1&Processor.Issue_Window.Commit_2)
